@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<body>
+<header class="p-3 text-bg-dark" th:fragment="header">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start d-print-none">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+            <img src="/io.png" style="width: 25px"/>
+        </a>
+
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+            <li>
+                <a href="/lost" class="nav-link px-2 text-white">Изгубено</a>
+            </li>
+            <li>
+                <a href="/found" class="nav-link px-2 text-white">Најдено</a>
+            </li>
+            <li>
+                <a href="/item/add" class="nav-link px-2 text-white">Пријави</a>
+            </li>
+
+        </ul>
+
+
+        <div class="text-end" sec:authorize="isAuthenticated()">
+            <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+                <li>
+                    <a href="/my-reports" class="nav-link px-2 text-white">Мои Пријави</a>
+                </li>
+                <li class="nav-link px-2 text-white" sec:authentication="name" > </li>
+            </ul>
+
+             </div>
+    </div>
+
+</header>
+</body>
+</html>
