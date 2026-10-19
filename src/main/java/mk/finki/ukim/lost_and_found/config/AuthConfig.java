@@ -12,7 +12,7 @@ public class AuthConfig {
         return http
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers(HttpMethod.OPTIONS).permitAll()
-//                        .anyRequest().authenticated()
+                        .anyRequest().authenticated()
                 )
                 .logout(LogoutConfigurer::permitAll);
     }
