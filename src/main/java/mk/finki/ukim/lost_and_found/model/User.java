@@ -18,12 +18,16 @@ public class User {
     @Id
     private String id;
 
+    private String alias;
+
     private String name;
 
     private String email;
 
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+    private boolean active = true;
 
     @Override
     public boolean equals(Object o) {

@@ -3,6 +3,7 @@ package mk.finki.ukim.lost_and_found.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -27,6 +28,9 @@ public class Student {
     private String lastName;
 
     private String parentName;
+
+    @ManyToOne
+    private StudyProgram studyProgram;
 
     @Override
     public boolean equals(Object o) {
