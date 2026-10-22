@@ -1,4 +1,4 @@
-package mk.finki.ukim.lost_and_found.model;
+package mk.finki.ukim.lost_and_found.model.enums;
 
 public enum AppRole {
     PROFESSOR, ADMIN, GUEST;

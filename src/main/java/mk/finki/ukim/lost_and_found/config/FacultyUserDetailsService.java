@@ -1,7 +1,7 @@
 package mk.finki.ukim.lost_and_found.config;
 
-import mk.finki.ukim.lost_and_found.model.Professor;
-import mk.finki.ukim.lost_and_found.model.User;
+import mk.finki.ukim.lost_and_found.model.domain.Professor;
+import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.exceptions.InvalidProfessorException;
 import mk.finki.ukim.lost_and_found.model.exceptions.InvalidUsernameException;
 import mk.finki.ukim.lost_and_found.repository.ProfessorRepository;

@@ -1,10 +1,11 @@
-package mk.finki.ukim.lost_and_found.model;
+package mk.finki.ukim.lost_and_found.model.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import lombok.*;
+import mk.finki.ukim.lost_and_found.model.enums.RoomType;
 
 @Getter
 @Setter

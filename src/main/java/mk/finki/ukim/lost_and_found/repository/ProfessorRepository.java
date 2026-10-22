@@ -1,6 +1,6 @@
 package mk.finki.ukim.lost_and_found.repository;
 
-import mk.finki.ukim.lost_and_found.model.Professor;
+import mk.finki.ukim.lost_and_found.model.domain.Professor;
 import org.springframework.stereotype.Repository;
 
 @Repository

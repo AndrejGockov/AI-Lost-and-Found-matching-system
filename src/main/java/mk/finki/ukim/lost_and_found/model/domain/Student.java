@@ -1,4 +1,4 @@
-package mk.finki.ukim.lost_and_found.model;
+package mk.finki.ukim.lost_and_found.model.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

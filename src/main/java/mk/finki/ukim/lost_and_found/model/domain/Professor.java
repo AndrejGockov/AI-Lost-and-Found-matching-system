@@ -1,7 +1,8 @@
-package mk.finki.ukim.lost_and_found.model;
+package mk.finki.ukim.lost_and_found.model.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import mk.finki.ukim.lost_and_found.model.enums.ProfessorTitle;
 import org.hibernate.Hibernate;
 
 import java.util.Objects;
@@ -12,29 +13,35 @@ import java.util.Objects;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "auth_user")
-public class User {
+public class Professor {
 
     @Id
+    @Column(name = "id")
     private String id;
 
-    private String alias;
-
+    @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Enumerated(EnumType.STRING)
-    private UserRole role;
+    private ProfessorTitle title;
 
-    private boolean active = true;
+    private Short orderingRank;
+
+    @ManyToOne
+    private Room office;
+
+    private boolean active;
+
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        User user = (User) o;
-        return getId() != null && Objects.equals(getId(), user.getId());
+        Professor professor = (Professor) o;
+        return getId() != null && Objects.equals(getId(), professor.getId());
     }
 
     @Override
