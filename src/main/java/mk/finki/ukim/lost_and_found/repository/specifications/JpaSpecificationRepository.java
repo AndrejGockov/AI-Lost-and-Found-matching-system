@@ -1,4 +1,4 @@
-package mk.finki.ukim.lost_and_found.repository;
+package mk.finki.ukim.lost_and_found.repository.specifications;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
