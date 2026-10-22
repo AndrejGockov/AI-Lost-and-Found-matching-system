@@ -55,7 +55,7 @@ CREATE TABLE found_item
 CREATE TABLE found_item_image
 (
     id         varchar(225) primary key,
-    item_id    varchar(225) references lost_item (id) on delete cascade,
+    item_id    varchar(225) references found_item (id) on delete cascade,
     size_bytes INT   NOT NULL CHECK (size_bytes > 0 AND size_bytes <= 20485760), -- 20 MB
     img_bytes  bytea not null
 );

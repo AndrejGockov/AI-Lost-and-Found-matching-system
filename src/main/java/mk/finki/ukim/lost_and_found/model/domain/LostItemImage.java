@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 
 @Getter
@@ -22,6 +24,7 @@ public class LostItemImage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private LostItem item;
 
     @JdbcTypeCode(SqlTypes.VARBINARY)

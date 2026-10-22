@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 
 @Getter
@@ -20,9 +22,9 @@ public class FoundItemImage {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    // NOTE: the SQL currently points this FK at lost_item
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private FoundItem item;
 
     @Column(name = "size_bytes", nullable = false)
