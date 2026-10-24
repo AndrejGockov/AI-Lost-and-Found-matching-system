@@ -10,6 +10,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -60,9 +62,13 @@ public class FoundItem {
     @Column(nullable = false, columnDefinition = "item_status")
     private ItemStatus status = ItemStatus.UNRESOLVED;
 
+    // Postgres "float[]" == double precision[]
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "float[]")
     private double[] embedding;
+
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FoundItemImage> images = new ArrayList<>();
 
     @PrePersist
     void onCreate() {

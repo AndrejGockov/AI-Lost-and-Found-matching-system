@@ -10,6 +10,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -57,6 +59,9 @@ public class LostItem {
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "float[]")
     private double[] embedding;
+
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LostItemImage> images = new ArrayList<>();
 
     @PrePersist
     void onCreate() {
