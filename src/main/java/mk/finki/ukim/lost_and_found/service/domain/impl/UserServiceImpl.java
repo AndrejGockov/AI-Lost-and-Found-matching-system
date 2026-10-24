@@ -17,4 +17,11 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findById(username).orElseThrow(InvalidUsernameException::new);
     }
 
+    @Override
+    public boolean isStudent(User user) {
+        return Boolean.TRUE.equals(user.getRole().isStudent());
+    }
+
+    @Override
+    public boolean isProfessor(User user) {return Boolean.TRUE.equals(user.getRole().isProfessor());}
 }
