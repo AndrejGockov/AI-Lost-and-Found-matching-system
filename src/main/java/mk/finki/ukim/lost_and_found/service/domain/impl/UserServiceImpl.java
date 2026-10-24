@@ -1,9 +1,9 @@
-package mk.finki.ukim.lost_and_found.service.impl;
+package mk.finki.ukim.lost_and_found.service.domain.impl;
 
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.exceptions.InvalidUsernameException;
 import mk.finki.ukim.lost_and_found.repository.UserRepository;
-import mk.finki.ukim.lost_and_found.service.UserService;
+import mk.finki.ukim.lost_and_found.service.domain.UserService;
 import org.springframework.stereotype.Service;
 
 @Service

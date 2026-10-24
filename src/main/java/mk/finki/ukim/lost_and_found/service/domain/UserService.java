@@ -1,4 +1,4 @@
-package mk.finki.ukim.lost_and_found.service;
+package mk.finki.ukim.lost_and_found.service.domain;
 
 
 import mk.finki.ukim.lost_and_found.model.domain.User;
