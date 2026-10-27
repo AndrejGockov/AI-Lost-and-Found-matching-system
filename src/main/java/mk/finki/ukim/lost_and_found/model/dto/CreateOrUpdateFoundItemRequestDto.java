@@ -25,16 +25,10 @@ public record CreateOrUpdateFoundItemRequestDto(
         boolean identifiable,
         List<MultipartFile> images
 ) {
-    // Create: builds a new item (status defaults to UNRESOLVED, embedding is filled in later by the AI service).
     public FoundItem toFoundItem(User poster, User holder) {
         FoundItem item = new FoundItem();
-        item.setPoster(poster);
-        applyTo(item, holder);
-        return item;
-    }
 
-    // Update: copies the editable fields onto an existing item
-    public void applyTo(FoundItem item, User holder) {
+        item.setPoster(poster);
         item.setHolder(holder);
         item.setTitle(title);
         item.setDescription(description);
@@ -48,6 +42,7 @@ public record CreateOrUpdateFoundItemRequestDto(
                     .map(file -> toImage(file, item))
                     .forEach(item.getImages()::add);
         }
+        return item;
     }
 
     private static FoundItemImage toImage(MultipartFile file, FoundItem item) {

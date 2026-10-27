@@ -22,16 +22,11 @@ public record CreateOrUpdateLostItemRequestDto(
         String locationLost,
         List<MultipartFile> images
 ) {
-    // Create: builds a new item
+
     public LostItem toLostItem(User poster) {
         LostItem item = new LostItem();
-        item.setPoster(poster);
-        applyTo(item);
-        return item;
-    }
 
-    // Update: copies the editable fields onto an existing item. New images are appended.
-    public void applyTo(LostItem item) {
+        item.setPoster(poster);
         item.setTitle(title);
         item.setDescription(description);
         item.setDateLost(dateLost);
@@ -43,6 +38,7 @@ public record CreateOrUpdateLostItemRequestDto(
                     .map(file -> toImage(file, item))
                     .forEach(item.getImages()::add);
         }
+        return item;
     }
 
     private static LostItemImage toImage(MultipartFile file, LostItem item) {

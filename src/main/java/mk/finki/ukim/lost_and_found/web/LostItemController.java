@@ -17,22 +17,22 @@ public class LostItemController {
 
     @GetMapping
     public String getLostItemsPage(){
-        return "";
+        return "lostItems/lostItems";
     }
 
-    @GetMapping
-    public String getRestrictedLostItemsPage(){
-        return "";
-    }
+//    @GetMapping
+//    public String getRestrictedLostItemsPage(){
+//        return "";
+//    }
 
     @GetMapping("/{id}")
     public String findById(@PathVariable String id){
         return "";
     }
 
-    @GetMapping("/")
+    @GetMapping("/add")
     public String addLostItem(){
-        return "";
+        return "lostItems/lostItemForm";
     }
 
     @PostMapping
