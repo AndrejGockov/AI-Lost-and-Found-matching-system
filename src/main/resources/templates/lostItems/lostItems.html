@@ -1,10 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Lost items</title>
 </head>
 <body>
-<h1>lost item list</h1>
+<h1>Lost items</h1>
+
+<p th:if="${error}" th:text="${error}"></p>
+
+<p><a th:href="@{/lost-items/add}">Add lost item</a></p>
+
+<!-- Filter form using query parameters via th:value and th:selected with ${param} -->
+<form method="get" th:action="@{/lost-items}">
+    <label>Title
+        <input type="text" name="title" th:value="${param.title}">
+    </label>
+
+    <!-- employees only -->
+    <label th:unless="${isStudent}">Poster name
+        <input type="text" name="posterName" th:value="${param.posterName}">
+    </label>
+
+    <label th:unless="${isStudent}">Status
+        <select name="status">
+            <option value="">All</option>
+            <option th:each="s : ${itemStatus}"
+                    th:value="${s}"
+                    th:text="${s.displayName}"
+                    th:selected="${param.status != null and param.status[0] == s.name()}"></option>
+        </select>
+    </label>
+
+    <!-- students -->
+    <span th:if="${isStudent}">Showing unresolved items only</span>
+
+    <label>Per page
+        <select name="pageSize">
+            <option th:each="n : ${#numbers.sequence(10, 50, 10)}"
+                    th:value="${n}"
+                    th:text="${n}"
+                    th:selected="${param.pageSize != null and param.pageSize[0] == n.toString()}"></option>
+        </select>
+    </label>
+
+    <button type="submit">Filter</button>
+    <a th:href="@{/lost-items}">Clear</a>
+</form>
+
+<p th:if="${items.empty}">No lost items found.</p>
+
+<!-- List layout -->
+<ul th:unless="${items.empty}" style="list-style-type: none; padding: 0;">
+    <li th:each="item : ${items.content}" style="border: 1px solid #ccc; margin-bottom: 10px; padding: 15px; border-radius: 5px;">
+        <h3 style="margin-top: 0;">
+            <a th:href="@{/lost-items/{id}(id=${item.id})}" th:text="${item.title}">Item Title</a>
+        </h3>
+        <p><strong>Description:</strong> <span th:text="${item.description}"></span></p>
+        <p><strong>Posted by:</strong> <span th:text="${item.posterName}"></span></p>
+        <p><strong>Status:</strong> <span th:text="${item.status.displayName}"></span></p>
+        <p><strong>Date lost:</strong> <span th:text="${#temporals.format(item.dateLost, 'yyyy-MM-dd HH:mm')}"></span></p>
+        <p><strong>Location lost:</strong> <span th:text="${item.locationLost}"></span></p>
+        <p><strong>Date posted:</strong> <span th:text="${#temporals.format(item.datePosted, 'yyyy-MM-dd HH:mm')}"></span></p>
+        <p><strong>Last updated:</strong> <span th:text="${#temporals.format(item.lastUpdated, 'yyyy-MM-dd HH:mm')}"></span></p>
+
+        <div>
+            <!-- only the poster can edit -->
+            <a th:if="${item.posterId == user.id}" th:href="@{/lost-items/edit/{id}(id=${item.id})}">Edit</a>
+        </div>
+    </li>
+</ul>
+
+<!-- Pagination: preserves active query parameters using param values -->
+<p>
+    <a th:if="${items.hasPrevious()}"
+       th:href="@{/lost-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, pageNum=${items.number}, pageSize=${param.pageSize})}">Previous</a>
+
+    <span th:text="'Page ' + ${items.number + 1} + ' of ' + ${items.totalPages == 0 ? 1 : items.totalPages}"></span>
+
+    <a th:if="${items.hasNext()}"
+       th:href="@{/lost-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, pageNum=${items.number + 2}, pageSize=${param.pageSize})}">Next</a>
+</p>
 </body>
 </html>

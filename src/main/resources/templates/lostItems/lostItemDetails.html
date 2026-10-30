@@ -1,10 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title th:text="${item.title()}">Lost Item</title>
 </head>
 <body>
+<p th:if="${error}" th:text="${error}" style="color: red;"></p>
 
+<h1 th:text="${item.title()}">Title</h1>
+<p th:text="${item.description()}">Description</p>
+<p>Date lost: <span th:text="${item.dateLost()}"></span></p>
+<p>Location: <span th:text="${item.locationLost()}"></span></p>
+
+<!-- Display Attached Images -->
+<div th:if="${item.images() != null and !item.images().empty}">
+    <h3>Images</h3>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div th:each="img : ${item.images()}">
+            <img th:if="${img.getBase64Data() != ''}"
+                 th:src="'data:image/jpeg;base64,' + ${img.getBase64Data()}"
+                 alt="Lost Item Image"
+                 style="max-width: 200px; max-height: 200px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+    </div>
+</div>
+
+<div th:if="${item.posterId == user.id}">
+    <form method="post" th:action="@{/lost-items/update-status/{id}(id=${item.id})}">
+        <select name="itemStatus">
+            <option th:each="s : ${itemStatus}" th:value="${s}" th:text="${s}"></option>
+        </select>
+        <button type="submit">Change status</button>
+    </form>
+
+    <a th:href="@{/lost-items/edit/{id}(id=${item.id})}">Edit</a>
+
+    <form method="post" th:action="@{/lost-items/delete/{id}(id=${item.id})}"
+          onsubmit="return confirm('Delete this item?');" style="display:inline;">
+        <button type="submit">Delete</button>
+    </form>
+</div>
+
+<p th:text="${item.posterName()}"></p>
+
+<a th:href="@{/lost-items}">Back</a>
 </body>
 </html>
