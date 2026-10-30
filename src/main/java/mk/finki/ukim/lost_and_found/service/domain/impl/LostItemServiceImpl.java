@@ -2,6 +2,7 @@ package mk.finki.ukim.lost_and_found.service.domain.impl;
 
 import lombok.AllArgsConstructor;
 import mk.finki.ukim.lost_and_found.model.domain.LostItem;
+import mk.finki.ukim.lost_and_found.model.domain.LostItemImage;
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.LostItemNotFoundException;
@@ -60,11 +61,17 @@ public class LostItemServiceImpl implements LostItemService {
         existing.setUpdated(true);
         existing.setEmbedding(null);
 
-        // New images come from the request, re-attach them to the managed item
-        lostItem.getImages().forEach(image -> {
-            image.setItem(existing);
-            existing.getImages().add(image);
-        });
+        List<LostItemImage> newImages = lostItem.getImages();
+
+        if (newImages != null && !newImages.isEmpty()) {
+            // Deletes orphaned images
+            existing.getImages().clear();
+
+            for (LostItemImage image : newImages) {
+                image.setItem(existing);
+                existing.getImages().add(image);
+            }
+        }
 
         return lostItemRepository.save(existing);
     }
