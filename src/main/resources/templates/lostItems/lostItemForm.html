@@ -1,52 +1,55 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
 <head>
     <meta charset="UTF-8">
     <title th:text="${item != null} ? 'Edit Lost Item' : 'Add Lost Item'">Lost Item Form</title>
 </head>
 <body>
-<h1 th:text="${item != null} ? 'Edit Lost Item' : 'Add Lost Item'">Lost Item Form</h1>
+<div layout:fragment="content">
+    <h1 th:text="${item != null} ? 'Edit Lost Item' : 'Add Lost Item'">Lost Item Form</h1>
 
-<p th:if="${error}" th:text="${error}" style="color: red;"></p>
+    <p th:if="${error}" th:text="${error}" style="color: red;"></p>
 
-<form method="post"
-      enctype="multipart/form-data"
-      th:action="${item != null} ? @{/lost-items/{id}(id=${item.id()})} : @{/lost-items}">
+    <form method="post"
+          enctype="multipart/form-data"
+          th:action="${item != null} ? @{/lost-items/{id}(id=${item.id()})} : @{/lost-items}">
 
-    <div>
-        <label for="title">Title</label>
-        <input type="text" id="title" name="title" required
-               th:value="${item != null} ? ${item.title()} : ''">
-    </div>
+        <div>
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" required
+                   th:value="${item != null} ? ${item.title()} : ''">
+        </div>
 
-    <div>
-        <label for="description">Description</label>
-        <textarea id="description" name="description" rows="4" required
-                  th:text="${item != null} ? ${item.description()} : ''"></textarea>
-    </div>
+        <div>
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4" required
+                      th:text="${item != null} ? ${item.description()} : ''"></textarea>
+        </div>
 
-    <div>
-        <label for="dateLost">Date Lost</label>
-        <input type="datetime-local" id="dateLost" name="dateLost" required
-               th:value="${dateLostValue}">
-    </div>
+        <div>
+            <label for="dateLost">Date Lost</label>
+            <input type="datetime-local" id="dateLost" name="dateLost" required
+                   th:value="${dateLostValue}">
+        </div>
 
-    <div>
-        <label for="locationLost">Location Lost</label>
-        <input type="text" id="locationLost" name="locationLost" required
-               th:value="${item != null} ? ${item.locationLost()} : ''">
-    </div>
+        <div>
+            <label for="locationLost">Location Lost</label>
+            <input type="text" id="locationLost" name="locationLost" required
+                   th:value="${item != null} ? ${item.locationLost()} : ''">
+        </div>
 
-    <div>
-        <label for="images">Images</label>
-        <input type="file" id="images" name="images" accept="image/*" multiple>
-    </div>
+        <div>
+            <label for="images">Images</label>
+            <input type="file" id="images" name="images" accept="image/*" multiple>
+        </div>
 
-    <div>
-        <button type="submit" th:text="${item != null} ? 'Update' : 'Create'">Submit</button>
-        <a th:href="@{/lost-items}">Cancel</a>
-    </div>
-</form>
-
+        <div>
+            <button type="submit" th:text="${item != null} ? 'Update' : 'Create'">Submit</button>
+            <a th:href="@{/lost-items}">Cancel</a>
+        </div>
+    </form>
+</div>
 </body>
 </html>
