@@ -13,7 +13,6 @@ public record DisplayRestrictedFoundItemResponseDto(
         String posterName,
         String holderId,
         String holderName,
-        String description,
         Instant datePosted,
         Instant lastUpdated,
         ItemStatus status
@@ -26,7 +25,6 @@ public record DisplayRestrictedFoundItemResponseDto(
                 item.getPoster().getName(),
                 item.getHolder().getId(),
                 item.getHolder().getName(),
-                item.getDescription(),
                 item.getDatePosted(),
                 item.getLastUpdated(),
                 item.getStatus()
