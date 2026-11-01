@@ -13,7 +13,9 @@
     <p><strong>Posted by:</strong> <span th:text="${item.posterName}">Poster Name</span></p>
     <p th:text="${item.description}">Description</p>
     <p>Date lost: <span th:text="${item.dateLost}"></span></p>
+    <p>Updated at: <span th:text="${item.lastUpdated()}"></span></p>
     <p>Location: <span th:text="${item.locationLost}"></span></p>
+    <p>Status: <span th:text="${item.status()}"></span></p>
 
     <!-- Display Attached Images -->
     <div th:if="${item.images != null and !item.images.empty}">
