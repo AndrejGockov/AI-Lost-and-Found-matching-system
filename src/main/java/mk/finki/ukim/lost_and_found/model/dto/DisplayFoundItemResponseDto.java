@@ -20,7 +20,7 @@ public record DisplayFoundItemResponseDto(
         boolean identifiable,
         ItemStatus status,
         List<DisplayItemImageResponseDto> images
-) {
+) implements {
     public static DisplayFoundItemResponseDto from(FoundItem item) {
         return new DisplayFoundItemResponseDto(
                 item.getId(),
