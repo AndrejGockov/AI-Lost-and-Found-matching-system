@@ -2,14 +2,12 @@ package mk.finki.ukim.lost_and_found.web;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import mk.finki.ukim.lost_and_found.model.domain.LostItem;
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.dto.CreateOrUpdateLostItemRequestDto;
 import mk.finki.ukim.lost_and_found.model.dto.DisplayLostItemResponseDto;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.LostItemNotFoundException;
 import mk.finki.ukim.lost_and_found.service.application.LostItemApplicationService;
-import mk.finki.ukim.lost_and_found.service.domain.LostItemService;
 import mk.finki.ukim.lost_and_found.service.domain.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,7 +25,6 @@ import java.time.format.DateTimeFormatter;
 @RequestMapping({"/lost-items"})
 public class LostItemController {
     private final LostItemApplicationService lostItemApplicationService;
-    private final LostItemService lostItemService;
     private final UserService userService;
 
     @GetMapping
@@ -91,9 +88,8 @@ public class LostItemController {
                 .orElseThrow(() -> new LostItemNotFoundException(id));
         model.addAttribute("item", itemDto);
 
-        LostItem item = lostItemService.findById(id).orElseThrow(() -> new LostItemNotFoundException(id));
-        if (item.getDateLost() != null) {
-            String formattedDate = LocalDateTime.ofInstant(item.getDateLost(), ZoneId.systemDefault())
+        if (itemDto.dateLost() != null) {
+            String formattedDate = LocalDateTime.ofInstant(itemDto.dateLost(), ZoneId.systemDefault())
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
             model.addAttribute("dateLostValue", formattedDate);
         }
