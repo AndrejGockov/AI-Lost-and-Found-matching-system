@@ -70,6 +70,10 @@ public class FoundItem {
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FoundItemImage> images = new ArrayList<>();
 
+    // History for who's held the item
+    @OneToMany(mappedBy = "foundItem", fetch = FetchType.LAZY)
+    private List<TransferFoundItem> transfers = new ArrayList<>();
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();

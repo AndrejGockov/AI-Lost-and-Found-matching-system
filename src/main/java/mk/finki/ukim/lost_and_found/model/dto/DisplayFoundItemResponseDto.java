@@ -19,7 +19,8 @@ public record DisplayFoundItemResponseDto(
         String locationFound,
         boolean identifiable,
         ItemStatus status,
-        List<DisplayItemImageResponseDto> images
+        List<DisplayItemImageResponseDto> images,
+        List<DisplayTransferFoundItemResponseDto> transfers
 ) {
     public static DisplayFoundItemResponseDto from(FoundItem item) {
         return new DisplayFoundItemResponseDto(
@@ -39,7 +40,8 @@ public record DisplayFoundItemResponseDto(
                 item.getImages()
                         .stream()
                         .map(DisplayItemImageResponseDto::from)
-                        .toList()
+                        .toList(),
+                DisplayTransferFoundItemResponseDto.from(item.getTransfers())
         );
     }
 
