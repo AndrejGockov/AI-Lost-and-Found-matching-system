@@ -143,6 +143,6 @@ public class LostItemController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/lost-items/{id}";
         }
-        return "redirect:/lost-items";
+        return "redirect:/my-reports";
     }
 }

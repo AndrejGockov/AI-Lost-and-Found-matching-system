@@ -63,6 +63,10 @@ public class LostItem {
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LostItemImage> images = new ArrayList<>();
 
+    // For deleting images when editing post
+    @Transient
+    private List<String> deleteImageIds = new ArrayList<>();
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
