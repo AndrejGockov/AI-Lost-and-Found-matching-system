@@ -77,7 +77,6 @@ public class LostItemServiceImpl implements LostItemService {
     }
 
     @Override
-    @Transactional
     public LostItem updateStatus(String id, ItemStatus itemStatus) {
         LostItem existing = lostItemRepository.findById(id)
                 .orElseThrow(() -> new LostItemNotFoundException(id));
