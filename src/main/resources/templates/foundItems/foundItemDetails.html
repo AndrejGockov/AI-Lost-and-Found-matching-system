@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div layout:fragment="content">
+    <p th:if="${error}" th:text="${error}" style="color: red;"></p>
+
+    <h1 th:text="${item.title}">Title</h1>
+    <p><strong>Posted by:</strong> <span th:text="${item.posterName}">Poster Name</span></p>
+    <p><strong>Current holder:</strong> <span th:text="${item.holderName}">Holder Name</span></p>
+    <p>Date posted: <span th:text="${#temporals.format(item.datePosted, 'yyyy-MM-dd HH:mm')}"></span></p>
+    <p>Last updated: <span th:text="${#temporals.format(item.lastUpdated, 'yyyy-MM-dd HH:mm')}"></span></p>
+    <p>Status: <span th:text="${item.status.displayName}"></span></p>
+
+    <div th:if="${full}">
+        <p th:text="${item.description}">Description</p>
+        <p>Date found: <span th:if="${item.dateFound != null}" th:text="${#temporals.format(item.dateFound, 'yyyy-MM-dd HH:mm')}"></span></p>
+        <p>Location: <span th:text="${item.locationFound}"></span></p>
+        <p>Identifiable: <span th:text="${item.identifiable} ? 'Yes' : 'No'"></span></p>
+
+        <!-- Display Attached Images -->
+        <div th:if="${item.images != null and !item.images.empty}">
+            <h3>Images</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div th:each="img : ${item.images}">
+                    <img th:if="${img.getBase64Data() != ''}"
+                         th:src="'data:image/jpeg;base64,' + ${img.getBase64Data()}"
+                         alt="Found Item Image"
+                         style="max-width: 200px; max-height: 200px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Holder history -->
+        <div th:if="${item.transfers != null and !item.transfers.empty}">
+            <h3>Holder history</h3>
+            <ul>
+                <li th:each="t : ${item.transfers}">
+                    <span th:text="${t.newHolderName}"></span>
+                    - <span th:if="${t.accepted == null}">Pending</span><span th:if="${t.accepted == true}">Accepted</span><span th:if="${t.accepted == false}">Declined</span>
+                    (<span th:text="${#temporals.format(t.dateSent, 'yyyy-MM-dd HH:mm')}"></span>)
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div th:unless="${full}">
+        <p><em>Full details are hidden for this item.</em></p>
+    </div>
+
+    <!-- Status update, holder history, Edit/Delete only visible to the current holder -->
+    <div th:if="${item.holderId == user.id}">
+        <form method="post" th:action="@{/found-items/update-status/{id}(id=${item.id})}">
+            <select name="itemStatus">
+                <option th:each="s : ${itemStatus}" th:value="${s}" th:text="${s}"></option>
+            </select>
+            <button type="submit">Change status</button>
+        </form>
+
+        <a th:href="@{/found-items/edit/{id}(id=${item.id})}">Edit</a>
+
+        <form method="post" th:action="@{/found-items/delete/{id}(id=${item.id})}"
+              onsubmit="return confirm('Delete this item?');" style="display:inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+
+    <p><a th:href="@{/found-items}">Back</a></p>
+</div>
+</body>
+</html>

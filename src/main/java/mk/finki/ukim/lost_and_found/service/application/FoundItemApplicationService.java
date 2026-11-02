@@ -10,8 +10,6 @@ import org.springframework.data.domain.Page;
 
 public interface FoundItemApplicationService {
 
-    boolean canViewFull(String id, User user);
-
     Optional<DisplayFoundItemResponseDto> findById(String id);
 
     Optional<DisplayRestrictedFoundItemResponseDto> findByIdRestricted(String id);

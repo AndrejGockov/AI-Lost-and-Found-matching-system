@@ -26,7 +26,11 @@ public interface FoundItemService {
 
     Optional<FoundItem> deleteById(String id);
 
-    Page<FoundItem> findPage(String title, int pageNum, int pageSize);
+    // Students filtering. identifiable selects which of the two found-items
+    // lists this page belongs to: true -> full/unrestricted list,
+    // false -> restricted list.
+    Page<FoundItem> findPage(String title, boolean identifiable, int pageNum, int pageSize);
 
-    Page<FoundItem> findPage(String title, String posterName, ItemStatus status, int pageNum, int pageSize);
+    // Employees filtering
+    Page<FoundItem> findPage(String title, String posterName, ItemStatus status, boolean identifiable, int pageNum, int pageSize);
 }

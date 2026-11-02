@@ -3,7 +3,6 @@ package mk.finki.ukim.lost_and_found.service.domain.impl;
 import lombok.AllArgsConstructor;
 import mk.finki.ukim.lost_and_found.model.domain.FoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.FoundItemImage;
-import mk.finki.ukim.lost_and_found.model.domain.LostItemImage;
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.FoundItemNotFoundException;
@@ -68,12 +67,14 @@ public class FoundItemServiceImpl implements FoundItemService {
         existing.setUpdated(true);
         existing.setEmbedding(null);
 
+        // 1. Remove only the images checked for deletion
+        if (foundItem.getDeleteImageIds() != null && !foundItem.getDeleteImageIds().isEmpty()) {
+            existing.getImages().removeIf(img -> foundItem.getDeleteImageIds().contains(img.getId()));
+        }
+
+        // 2. Append newly uploaded images to the existing collection
         List<FoundItemImage> newImages = foundItem.getImages();
-
         if (newImages != null && !newImages.isEmpty()) {
-            // Deletes orphaned images
-            existing.getImages().clear();
-
             for (FoundItemImage image : newImages) {
                 image.setItem(existing);
                 existing.getImages().add(image);
@@ -111,11 +112,14 @@ public class FoundItemServiceImpl implements FoundItemService {
         return existing;
     }
 
-    // Students filtering
+    // Students filtering. identifiable selects which of the two found-items
+    // lists this page belongs to: true -> full/unrestricted list,
+    // false -> restricted list.
     @Override
-    public Page<FoundItem> findPage(String title, int pageNum, int pageSize) {
+    public Page<FoundItem> findPage(String title, boolean identifiable, int pageNum, int pageSize) {
         Specification<FoundItem> specification = Specification.allOf(
                 filterEqualsV(FoundItem.class, "status", ItemStatus.UNRESOLVED),
+                filterEqualsV(FoundItem.class, "identifiable", identifiable),
                 filterContainsText(FoundItem.class, "title", title)
         );
 
@@ -124,9 +128,10 @@ public class FoundItemServiceImpl implements FoundItemService {
 
     // Employees filtering
     @Override
-    public Page<FoundItem> findPage(String title, String posterName, ItemStatus status, int pageNum, int pageSize) {
+    public Page<FoundItem> findPage(String title, String posterName, ItemStatus status, boolean identifiable, int pageNum, int pageSize) {
         Specification<FoundItem> specification = Specification.allOf(
                 filterEqualsV(FoundItem.class, "status", status),
+                filterEqualsV(FoundItem.class, "identifiable", identifiable),
                 filterContainsText(FoundItem.class, "title", title),
                 filterContainsText(FoundItem.class, "poster.name", posterName)
         );
