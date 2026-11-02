@@ -1,39 +1,64 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .offcanvas-end {
+            max-width: 250px;
+        }
+        .navbar-nav {
+            text-align: left;
+        }
+    </style>
+</head>
 <body>
-<header class="p-3 text-bg-dark" th:fragment="header">
+<header th:fragment="header" class="navbar navbar-expand-lg navbar-dark bg-dark px-4 py-3 d-print-none" id="headerpdf">
+    <!-- Brand / Logo Endpoint -->
+    <a class="nav-link d-flex align-items-center gap-2 text-white text-decoration-none" href="/">
+        <img src="/FINKI-logo.png" alt="" id="logo-image" style="width: 25px;"/>
+        <span>ФИНКИ Изгубено Најдено</span>
+    </a>
 
-    <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start d-print-none">
-        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
-            <img src="/io.png" style="width: 25px"/>
-        </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
 
-        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
-            <li>
-                <a href="/lost" class="nav-link px-2 text-white">Изгубено</a>
-            </li>
-            <li>
-                <a href="/found" class="nav-link px-2 text-white">Најдено</a>
-            </li>
-            <li>
-                <a href="/item/add" class="nav-link px-2 text-white">Пријави</a>
-            </li>
-
-        </ul>
-
-
-        <div class="text-end" sec:authorize="isAuthenticated()">
-            <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
-                <li>
-                    <a href="/my-reports" class="nav-link px-2 text-white">Мои Пријави</a>
+    <div class="offcanvas offcanvas-end bg-dark text-white" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Навигација</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body align-items-center">
+            <!-- Nav Links -->
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+                <li class="nav-item">
+                    <a href="/lost-items" class="nav-link">Изгубено</a>
                 </li>
-                <li class="nav-link px-2 text-white" sec:authentication="name" > </li>
+                <li class="nav-item">
+                    <a href="/found-items" class="nav-link">Најдено</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/my-reports" class="nav-link">Мои Пријави</a>
+                </li>
             </ul>
 
-             </div>
+            <!-- Username -->
+            <ul class="navbar-nav align-items-lg-center">
+                <th:block th:if="${#authentication.getPrincipal() == 'anonymousUser'}">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/my-reports">Најави се</a>
+                    </li>
+                </th:block>
+                <th:block sec:authorize="isAuthenticated()">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-info" id="username" sec:authentication="name"></a>
+                    </li>
+                </th:block>
+            </ul>
+        </div>
     </div>
-
 </header>
 </body>
 </html>

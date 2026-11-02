@@ -1,12 +1,12 @@
 <div th:fragment="pageSection(page)">
     <div class="row">
-        <div class="col-8">
+        <div class="col-12 col-md-8">
             <nav aria-label="Page navigation">
                 <ul class="pagination">
                     <li class="cursor-pointer page-item" th:class="${page.isFirst()} ? 'disabled' : ''">
                         <a class="page-link" href="#" onClick="updateQueryStringParameter('pageNum', 1)">Прва</a>
                     </li>
-                    <li class="page-item" th:class="${page.hasPrevious()} ? '': 'disabled'">
+                    <li class="page-item" th:class="${page.hasPrevious()} ? '' : 'disabled'">
                         <a class="page-link" href="#"
                            onClick="updateQueryStringParameter('pageNum', this.getAttribute('page-number'))"
                            th:page-number="${page.number}">Претходна</a>
@@ -17,7 +17,7 @@
                            onClick="updateQueryStringParameter('pageNum', this.getAttribute('page-number'))"
                            th:page-number="${pageNum}" th:text="${pageNum}"></a>
                     </li>
-                    <li class="page-item" th:class="${page.hasNext()} ? '': 'disabled'">
+                    <li class="page-item" th:class="${page.hasNext()} ? '' : 'disabled'">
                         <a class="page-link" href="#"
                            onClick="updateQueryStringParameter('pageNum', this.getAttribute('page-number'))"
                            th:page-number="${page.number+2}">Следна</a>
@@ -26,18 +26,17 @@
                         <a class="page-link" href="#"
                            onClick="updateQueryStringParameter('pageNum', this.getAttribute('page-number'))"
                            th:page-number="${page.totalPages}">Последна</a>
-
                     </li>
                 </ul>
             </nav>
         </div>
 
-        <div class="col-4">
-            <div class="d-flex align-items-center mb-3">
-                <label for="results" class="mr-2 mb-0">Резултати на страна: </label>
-
+        <div class="col-12 col-md-4">
+            <div class="d-flex results-container align-items-center mb-3">
+                <label for="results" class="mb-0">Резултати на страна: </label>
                 <select id="results" class="form-control custom-select" style="max-width: 100px;"
-                        onchange="updateQueryStringParameter('size',this.value)">
+                        onchange="updateQueryStringParameter('results',this.value)">
+                    <option value="5" th:selected="${page.size == 5}">5</option>
                     <option value="10" th:selected="${page.size == 10}">10</option>
                     <option value="20" th:selected="${page.size == 20}">20</option>
                     <option value="50" th:selected="${page.size == 50}">50</option>
@@ -62,6 +61,4 @@
             window.location = uri;
         }
     </script>
-
-
 </div>
