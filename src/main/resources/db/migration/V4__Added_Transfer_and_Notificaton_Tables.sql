@@ -4,12 +4,10 @@ CREATE TABLE transfer_found_item
 (
     id                varchar(255) PRIMARY KEY,
     found_item_id     varchar(255) NOT NULL REFERENCES found_item (id) ON DELETE Restrict ,
-    current_holder_id varchar(255) NOT NULL REFERENCES found_item (id) ON DELETE RESTRICT,
     new_holder_id     varchar(255) NOT NULL REFERENCES auth_user (id) ON DELETE RESTRICT,
     date_sent         TIMESTAMPTZ  NOT NULL DEFAULT now(),
     date_responded    TIMESTAMPTZ,
     is_accepted       BOOLEAN, -- NULL = pending, TRUE = accepted, FALSE = declined
-    CONSTRAINT chk_offer_not_self CHECK (current_holder_id <> new_holder_id),
     CONSTRAINT chk_offer_response_consistent
         CHECK ((is_accepted IS NULL) = (date_responded IS NULL)),
     CONSTRAINT chk_offer_response_after_sent

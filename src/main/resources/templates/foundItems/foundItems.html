@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+<div layout:fragment="content">
+  <h1>Found items</h1>
+
+  <p th:if="${error}" th:text="${error}"></p>
+
+  <p><a th:href="@{/found-items/add}">Add found item</a></p>
+
+  <!-- Filter form -->
+  <form method="get" th:action="@{/found-items}">
+    <label>Title
+      <input type="text" name="title" th:value="${param.title}">
+    </label>
+
+    <!-- employees only; applies to the unrestricted list -->
+    <label th:unless="${isStudent}">Poster name
+      <input type="text" name="posterName" th:value="${param.posterName}">
+    </label>
+
+    <label th:unless="${isStudent}">Status
+      <select name="status">
+        <option value="">All</option>
+        <option th:each="s : ${itemStatus}"
+                th:value="${s}"
+                th:text="${s.displayName}"
+                th:selected="${param.status != null and param.status[0] == s.name()}"></option>
+      </select>
+    </label>
+
+    <!-- students -->
+    <span th:if="${isStudent}">Showing unresolved items only</span>
+
+    <label>Per page
+      <select name="pageSize">
+        <option th:each="n : ${#numbers.sequence(10, 50, 10)}"
+                th:value="${n}"
+                th:text="${n}"
+                th:selected="${param.pageSize != null and param.pageSize[0] == n.toString()}"></option>
+      </select>
+    </label>
+
+    <button type="submit">Filter</button>
+    <a th:href="@{/found-items}">Clear</a>
+  </form>
+
+  <!-- Unrestricted items: identifiable = true -->
+  <h2>Unrestricted items</h2>
+  <p th:if="${fullItems.empty}">No unrestricted found items found.</p>
+  <ul th:unless="${fullItems.empty}" style="list-style-type: none; padding: 0;">
+    <li th:each="item : ${fullItems.content}" style="border: 1px solid #ccc; margin-bottom: 10px; padding: 15px; border-radius: 5px;">
+      <h3 style="margin-top: 0;">
+        <a th:href="@{/found-items/{id}(id=${item.id})}" th:text="${item.title}">Item Title</a>
+      </h3>
+
+      <!-- First image as a thumbnail, served from its own URL -->
+      <div th:if="${item.images != null and !item.images.empty}" style="margin-bottom: 10px;">
+        <img th:src="@{/found-items/images/{id}(id=${item.images[0].id()})}"
+             alt="Found Item Image"
+             style="width: 90px; height: 90px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px;">
+        <span th:if="${item.images.size() > 1}"
+              th:text="'+' + ${item.images.size() - 1} + ' more'"
+              style="color: #666; font-size: 0.9em;"></span>
+      </div>
+
+      <p><strong>Description:</strong> <span th:text="${item.description}"></span></p>
+      <p><strong>Posted by:</strong> <span th:text="${item.posterName}"></span></p>
+      <p><strong>Current holder:</strong> <span th:text="${item.holderName}"></span></p>
+      <p><strong>Status:</strong> <span th:text="${item.status.displayName}"></span></p>
+      <p><strong>Date found:</strong>
+        <span th:if="${item.dateFound != null}" th:text="${#temporals.format(item.dateFound, 'yyyy-MM-dd HH:mm')}"></span>
+      </p>
+      <p><strong>Location found:</strong> <span th:text="${item.locationFound}"></span></p>
+      <p><strong>Date posted:</strong> <span th:text="${#temporals.format(item.datePosted, 'yyyy-MM-dd HH:mm')}"></span></p>
+      <p><strong>Last updated:</strong> <span th:text="${#temporals.format(item.lastUpdated, 'yyyy-MM-dd HH:mm')}"></span></p>
+
+      <div>
+        <!-- only the current holder can edit -->
+        <a th:if="${item.holderId == user.id}" th:href="@{/found-items/edit/{id}(id=${item.id})}">Edit</a>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Restricted items: identifiable = false (no images, no description) -->
+  <h2>Restricted items</h2>
+  <p th:if="${restrictedItems.empty}">No restricted found items found.</p>
+  <ul th:unless="${restrictedItems.empty}" style="list-style-type: none; padding: 0;">
+    <li th:each="item : ${restrictedItems.content}" style="border: 1px solid #ccc; margin-bottom: 10px; padding: 15px; border-radius: 5px;">
+      <h3 style="margin-top: 0;">
+        <a th:href="@{/found-items/{id}(id=${item.id})}" th:text="${item.title}">Item Title</a>
+      </h3>
+      <p><strong>Posted by:</strong> <span th:text="${item.posterName}"></span></p>
+      <p><strong>Current holder:</strong> <span th:text="${item.holderName}"></span></p>
+      <p><strong>Status:</strong> <span th:text="${item.status.displayName}"></span></p>
+      <p><strong>Date posted:</strong> <span th:text="${#temporals.format(item.datePosted, 'yyyy-MM-dd HH:mm')}"></span></p>
+      <p><strong>Last updated:</strong> <span th:text="${#temporals.format(item.lastUpdated, 'yyyy-MM-dd HH:mm')}"></span></p>
+
+      <div>
+        <!-- only the current holder can edit -->
+        <a th:if="${item.holderId == user.id}" th:href="@{/found-items/edit/{id}(id=${item.id})}">Edit</a>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Pagination: title/pageSize apply to both lists, so one control pages both -->
+  <p>
+    <a th:if="${fullItems.hasPrevious() or restrictedItems.hasPrevious()}"
+       th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, pageNum=${fullItems.number}, pageSize=${param.pageSize})}">Previous</a>
+
+    <span th:text="'Page ' + (${fullItems.number} + 1)"></span>
+
+    <a th:if="${fullItems.hasNext() or restrictedItems.hasNext()}"
+       th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, pageNum=${fullItems.number + 2}, pageSize=${param.pageSize})}">Next</a>
+  </p>
+</div>
+</body>
+</html>

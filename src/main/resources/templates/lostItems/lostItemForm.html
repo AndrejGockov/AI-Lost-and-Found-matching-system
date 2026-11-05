@@ -5,14 +5,59 @@
 <head>
     <meta charset="UTF-8">
     <title th:text="${item != null} ? 'Edit Lost Item' : 'Add Lost Item'">Lost Item Form</title>
+    <style>
+        .image-preview-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .image-card {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #f9f9f9;
+        }
+        .image-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(220, 53, 69, 0.85);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .remove-btn:hover {
+            background: rgb(220, 53, 69);
+        }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
     <h1 th:text="${item != null} ? 'Edit Lost Item' : 'Add Lost Item'">Lost Item Form</h1>
 
+    <!-- Error message text container -->
     <p th:if="${error}" th:text="${error}" style="color: red;"></p>
+    <p id="clientError" style="color: red; display: none;"></p>
 
-    <form method="post"
+    <form id="itemForm" method="post"
           enctype="multipart/form-data"
           th:action="${item != null} ? @{/lost-items/{id}(id=${item.id()})} : @{/lost-items}">
 
@@ -40,9 +85,25 @@
                    th:value="${item != null} ? ${item.locationLost()} : ''">
         </div>
 
+        <!-- Unified Image Preview Container -->
         <div>
-            <label for="images">Images</label>
-            <input type="file" id="images" name="images" accept="image/*" multiple>
+            <label>Images Preview:</label>
+            <div id="imagePreviewContainer" class="image-preview-container">
+                <!-- Existing server-saved images (served from their own URL) -->
+                <th:block th:if="${item != null and item.images() != null}">
+                    <div th:each="img : ${item.images()}" class="image-card">
+                        <img th:src="@{/lost-items/images/{id}(id=${img.id()})}" alt="Item Image">
+                        <button type="button" class="remove-btn" title="Remove image" onclick="removeServerImage(this)">×</button>
+                        <!-- must stay inside the form: the card is only hidden, never removed -->
+                        <input type="checkbox" name="deleteImageIds" th:value="${img.id()}" style="display: none;" />
+                    </div>
+                </th:block>
+            </div>
+        </div>
+
+        <div>
+            <label for="images">Upload Images (Multiple allowed - PNG, JPG, WebP only)</label>
+            <input type="file" id="images" name="images" accept="image/png, image/jpeg, image/webp" multiple>
         </div>
 
         <div>
@@ -50,6 +111,87 @@
             <a th:href="@{/lost-items}">Cancel</a>
         </div>
     </form>
+
+    <script>
+        const imageInput = document.getElementById('images');
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const clientError = document.getElementById('clientError');
+
+        let dataTransfer = new DataTransfer();
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
+        imageInput.addEventListener('change', function(e) {
+            const files = e.target.files;
+            let invalidFiles = [];
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+
+                // Validate file type
+                if (!allowedTypes.includes(file.type)) {
+                    invalidFiles.push(file.name);
+                    continue;
+                }
+
+                dataTransfer.items.add(file);
+
+                const reader = new FileReader();
+                reader.onload = (function(f) {
+                    return function(event) {
+                        const card = document.createElement('div');
+                        card.className = 'image-card';
+
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'remove-btn';
+                        btn.innerHTML = '×';
+                        btn.title = 'Remove image';
+                        btn.onclick = function() {
+                            const newDt = new DataTransfer();
+                            for (let j = 0; j < dataTransfer.files.length; j++) {
+                                const curFile = dataTransfer.files[j];
+                                if (!(curFile.name === f.name && curFile.size === f.size && curFile.lastModified === f.lastModified)) {
+                                    newDt.items.add(curFile);
+                                }
+                            }
+                            dataTransfer = newDt;
+                            imageInput.files = dataTransfer.files;
+                            card.remove();
+                        };
+
+                        card.appendChild(img);
+                        card.appendChild(btn);
+                        previewContainer.appendChild(card);
+                    };
+                })(file);
+
+                reader.readAsDataURL(file);
+            }
+
+            if (invalidFiles.length > 0) {
+                clientError.textContent = `The following file(s) are not supported: ${invalidFiles.join(', ')}. Please upload only PNG, JPG, or WebP images.`;
+                clientError.style.display = 'block';
+            } else {
+                clientError.textContent = '';
+                clientError.style.display = 'none';
+            }
+
+            imageInput.files = dataTransfer.files;
+        });
+
+        function removeServerImage(button) {
+            const card = button.closest('.image-card');
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = true;   // submitted as deleteImageIds
+            }
+            // Hide, do NOT remove: removing the card would remove the checkbox from the form
+            card.style.display = 'none';
+        }
+    </script>
 </div>
 </body>
 </html>

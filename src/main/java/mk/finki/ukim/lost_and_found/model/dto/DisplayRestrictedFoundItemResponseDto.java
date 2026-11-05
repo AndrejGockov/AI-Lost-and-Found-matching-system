@@ -15,7 +15,8 @@ public record DisplayRestrictedFoundItemResponseDto(
         String holderName,
         Instant datePosted,
         Instant lastUpdated,
-        ItemStatus status
+        ItemStatus status,
+        List<DisplayTransferFoundItemResponseDto> transfers
 ) {
     public static DisplayRestrictedFoundItemResponseDto from(FoundItem item) {
         return new DisplayRestrictedFoundItemResponseDto(
@@ -27,7 +28,8 @@ public record DisplayRestrictedFoundItemResponseDto(
                 item.getHolder().getName(),
                 item.getDatePosted(),
                 item.getLastUpdated(),
-                item.getStatus()
+                item.getStatus(),
+                DisplayTransferFoundItemResponseDto.from(item.getTransfers())
         );
     }
 

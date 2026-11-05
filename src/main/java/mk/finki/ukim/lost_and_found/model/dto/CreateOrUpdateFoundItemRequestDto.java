@@ -5,6 +5,7 @@ import jakarta.validation.constraints.PastOrPresent;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import mk.finki.ukim.lost_and_found.model.domain.FoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.FoundItemImage;
@@ -23,7 +24,8 @@ public record CreateOrUpdateFoundItemRequestDto(
         Instant dateFound,
         String locationFound,
         boolean identifiable,
-        List<MultipartFile> images
+        List<MultipartFile> images,
+        List<String> deleteImageIds
 ) {
     public FoundItem toFoundItem(User poster, User holder) {
         FoundItem item = new FoundItem();
@@ -35,6 +37,7 @@ public record CreateOrUpdateFoundItemRequestDto(
         item.setDateFound(dateFound);
         item.setLocationFound(locationFound);
         item.setIdentifiable(identifiable);
+        item.setDeleteImageIds(deleteImageIds != null ? deleteImageIds : new ArrayList<>());
 
         if (images != null) {
             images.stream()

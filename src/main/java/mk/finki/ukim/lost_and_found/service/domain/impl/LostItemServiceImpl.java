@@ -61,12 +61,14 @@ public class LostItemServiceImpl implements LostItemService {
         existing.setUpdated(true);
         existing.setEmbedding(null);
 
+        // 1. Remove images checked for deletion using their String IDs[cite: 13]
+        if (lostItem.getDeleteImageIds() != null && !lostItem.getDeleteImageIds().isEmpty()) {
+            existing.getImages().removeIf(img -> lostItem.getDeleteImageIds().contains(img.getId()));
+        }
+
+        // 2. Append newly uploaded images to the existing collection
         List<LostItemImage> newImages = lostItem.getImages();
-
         if (newImages != null && !newImages.isEmpty()) {
-            // Deletes orphaned images
-            existing.getImages().clear();
-
             for (LostItemImage image : newImages) {
                 image.setItem(existing);
                 existing.getImages().add(image);
@@ -77,7 +79,6 @@ public class LostItemServiceImpl implements LostItemService {
     }
 
     @Override
-    @Transactional
     public LostItem updateStatus(String id, ItemStatus itemStatus) {
         LostItem existing = lostItemRepository.findById(id)
                 .orElseThrow(() -> new LostItemNotFoundException(id));

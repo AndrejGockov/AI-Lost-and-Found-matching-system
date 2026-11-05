@@ -2,9 +2,8 @@ package mk.finki.ukim.lost_and_found.model.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import mk.finki.ukim.lost_and_found.model.domain.LostItem;
 import mk.finki.ukim.lost_and_found.model.domain.LostItemImage;
@@ -20,7 +19,8 @@ public record CreateOrUpdateLostItemRequestDto(
         @PastOrPresent
         Instant dateLost,
         String locationLost,
-        List<MultipartFile> images
+        List<MultipartFile> images,
+        List<String> deleteImageIds
 ) {
 
     public LostItem toLostItem(User poster) {
@@ -31,6 +31,7 @@ public record CreateOrUpdateLostItemRequestDto(
         item.setDescription(description);
         item.setDateLost(dateLost);
         item.setLocationLost(locationLost);
+        item.setDeleteImageIds(deleteImageIds != null ? deleteImageIds : new ArrayList<>());
 
         if (images != null) {
             images.stream()
