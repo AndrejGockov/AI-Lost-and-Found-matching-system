@@ -32,7 +32,7 @@ public class LostItemController {
                                    @RequestParam(required = false) String posterName,
                                    @RequestParam(required = false) ItemStatus status,
                                    @RequestParam(defaultValue = "1") int pageNum,
-                                   @RequestParam(defaultValue = "10") int pageSize,
+                                   @RequestParam(name = "results", defaultValue = "10") int pageSize,
                                    Principal principal,
                                    Model model){
         User user = userService.findByUsername(principal.getName());

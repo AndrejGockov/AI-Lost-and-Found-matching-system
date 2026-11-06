@@ -6,83 +6,67 @@
     <meta charset="UTF-8">
 </head>
 <body>
-<div layout:fragment="content">
-    <h1>Lost items</h1>
+<div layout:fragment="content" class="container px-2 py-3">
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <h1 class="mb-0">Lost items</h1>
+        <a th:href="@{/lost-items/add}" class="btn btn-primary-custom btn-sm"><i class="bi bi-plus-circle me-1"></i>Add lost item</a>
+    </div>
 
-    <p th:if="${error}" th:text="${error}"></p>
-
-    <p><a th:href="@{/lost-items/add}">Add lost item</a></p>
+    <p th:if="${error}" th:text="${error}" class="alert alert-danger"></p>
 
     <!-- Filter form -->
-    <form method="get" th:action="@{/lost-items}">
-        <label>Title
-            <input type="text" name="title" th:value="${param.title}">
-        </label>
+    <form method="get" th:action="@{/lost-items}" class="mb-4 d-flex flex-wrap align-items-end gap-2">
+        <div>
+            <label class="form-label mb-1">Title</label>
+            <input type="text" name="title" th:value="${param.title}" class="form-control">
+        </div>
 
         <!-- employees only -->
-        <label th:unless="${isStudent}">Poster name
-            <input type="text" name="posterName" th:value="${param.posterName}">
-        </label>
+        <div th:unless="${isStudent}">
+            <label class="form-label mb-1">Poster name</label>
+            <input type="text" name="posterName" th:value="${param.posterName}" class="form-control">
+        </div>
 
-        <label th:unless="${isStudent}">Status
-            <select name="status">
+        <div th:unless="${isStudent}">
+            <label class="form-label mb-1">Status</label>
+            <select name="status" class="form-control">
                 <option value="">All</option>
                 <option th:each="s : ${itemStatus}"
                         th:value="${s}"
                         th:text="${s.displayName}"
                         th:selected="${param.status != null and param.status[0] == s.name()}"></option>
             </select>
-        </label>
+        </div>
 
-        <!-- students -->
-        <span th:if="${isStudent}">Showing unresolved items only</span>
+        <!-- keep the page size chosen in the paging fragment when filtering -->
+        <input type="hidden" name="results" th:if="${param.results != null}" th:value="${param.results[0]}">
 
-        <label>Per page
-            <select name="pageSize">
-                <option th:each="n : ${#numbers.sequence(10, 50, 10)}"
-                        th:value="${n}"
-                        th:text="${n}"
-                        th:selected="${param.pageSize != null and param.pageSize[0] == n.toString()}"></option>
-            </select>
-        </label>
-
-        <button type="submit">Filter</button>
-        <a th:href="@{/lost-items}">Clear</a>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search me-1"></i>Search</button>
+            <a th:if="${param.title != null and !param.title.empty} or ${param.posterName != null and !param.posterName.empty} or ${param.status != null and !param.status.empty}"
+               th:href="@{/lost-items}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Clear</a>
+        </div>
     </form>
 
-    <p th:if="${items.empty}">No lost items found.</p>
+    <p th:if="${items.empty}" class="alert alert-warning">No lost items found.</p>
 
-    <!-- List layout -->
-    <ul th:unless="${items.empty}" style="list-style-type: none; padding: 0;">
-        <li th:each="item : ${items.content}" style="border: 1px solid #ccc; margin-bottom: 10px; padding: 15px; border-radius: 5px;">
-            <h3 style="margin-top: 0;">
-                <a th:href="@{/lost-items/{id}(id=${item.id})}" th:text="${item.title}">Item Title</a>
-            </h3>
-            <p><strong>Description:</strong> <span th:text="${item.description}"></span></p>
-            <p><strong>Posted by:</strong> <span th:text="${item.posterName}"></span></p>
-            <p><strong>Status:</strong> <span th:text="${item.status.displayName}"></span></p>
-            <p><strong>Date lost:</strong> <span th:text="${#temporals.format(item.dateLost, 'yyyy-MM-dd HH:mm')}"></span></p>
-            <p><strong>Location lost:</strong> <span th:text="${item.locationLost}"></span></p>
-            <p><strong>Date posted:</strong> <span th:text="${#temporals.format(item.datePosted, 'yyyy-MM-dd HH:mm')}"></span></p>
-            <p><strong>Last updated:</strong> <span th:text="${#temporals.format(item.lastUpdated, 'yyyy-MM-dd HH:mm')}"></span></p>
-
-            <div>
-                <!-- only the poster can edit -->
-                <a th:if="${item.posterId == user.id}" th:href="@{/lost-items/edit/{id}(id=${item.id})}">Edit</a>
-            </div>
-        </li>
-    </ul>
+    <!-- Cards: 1 per row on phones, 2 on tablets, 3 on wide screens -->
+    <div th:unless="${items.empty}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-4">
+        <div th:each="item : ${items.content}" class="col">
+            <div th:replace="~{fragments/itemCard :: itemCard(
+                    item=${item},
+                    basePath='/lost-items',
+                    description=${item.description},
+                    hasImages=${item.images != null and !item.images.empty},
+                    canEdit=${item.posterId == user.id},
+                    showStatus=${!isStudent},
+                    posterName=${item.posterName},
+                    holderName=${null})}"></div>
+        </div>
+    </div>
 
     <!-- Pagination -->
-    <p>
-        <a th:if="${items.hasPrevious()}"
-           th:href="@{/lost-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, pageNum=${items.number}, pageSize=${param.pageSize})}">Previous</a>
-
-        <span th:text="'Page ' + ${items.number + 1} + ' of ' + ${items.totalPages == 0 ? 1 : items.totalPages}"></span>
-
-        <a th:if="${items.hasNext()}"
-           th:href="@{/lost-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, pageNum=${items.number + 2}, pageSize=${param.pageSize})}">Next</a>
-    </p>
+    <div th:replace="~{fragments/paging :: pageSection(page=${items})}"></div>
 </div>
 </body>
 </html>
