@@ -10,16 +10,17 @@
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
+            margin-top: 10px;
             margin-bottom: 15px;
         }
         .image-card {
             position: relative;
-            width: 90px;
-            height: 90px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            width: 110px;
+            height: 110px;
+            border-radius: 12px;
             overflow: hidden;
-            background: #f9f9f9;
+            background: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .image-card img {
             width: 100%;
@@ -28,89 +29,92 @@
         }
         .remove-btn {
             position: absolute;
-            top: 4px;
-            right: 4px;
-            background: rgba(220, 53, 69, 0.85);
-            color: white;
+            top: 6px;
+            left: 6px;
+            background: #e2e8f0;
+            color: #1e293b;
             border: none;
             border-radius: 50%;
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             font-size: 14px;
-            font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             line-height: 1;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .remove-btn:hover {
-            background: rgb(220, 53, 69);
+            background: #cbd5e1;
         }
     </style>
 </head>
 <body>
-<div layout:fragment="content">
-    <h1 th:text="${item != null} ? 'Edit Lost Item' : 'Add Lost Item'">Lost Item Form</h1>
+<div layout:fragment="content" class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="form-card p-4">
+                <h2 class="text-center mb-4 fw-bold text-dark" th:text="${item != null} ? 'Edit Lost Item' : 'Add Lost Item'">Lost Item Form</h2>
 
-    <!-- Error message text container -->
-    <p th:if="${error}" th:text="${error}" style="color: red;"></p>
-    <p id="clientError" style="color: red; display: none;"></p>
+                <!-- Error message text container -->
+                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+                <div id="clientError" class="alert alert-danger" style="display: none;"></div>
 
-    <form id="itemForm" method="post"
-          enctype="multipart/form-data"
-          th:action="${item != null} ? @{/lost-items/{id}(id=${item.id()})} : @{/lost-items}">
+                <form id="itemForm" method="post"
+                      enctype="multipart/form-data"
+                      th:action="${item != null} ? @{/lost-items/{id}(id=${item.id()})} : @{/lost-items}">
 
-        <div>
-            <label for="title">Title</label>
-            <input type="text" id="title" name="title" required
-                   th:value="${item != null} ? ${item.title()} : ''">
-        </div>
-
-        <div>
-            <label for="description">Description</label>
-            <textarea id="description" name="description" rows="4" required
-                      th:text="${item != null} ? ${item.description()} : ''"></textarea>
-        </div>
-
-        <div>
-            <label for="dateLost">Date Lost</label>
-            <input type="datetime-local" id="dateLost" name="dateLost" required
-                   th:value="${dateLostValue}">
-        </div>
-
-        <div>
-            <label for="locationLost">Location Lost</label>
-            <input type="text" id="locationLost" name="locationLost" required
-                   th:value="${item != null} ? ${item.locationLost()} : ''">
-        </div>
-
-        <!-- Unified Image Preview Container -->
-        <div>
-            <label>Images Preview:</label>
-            <div id="imagePreviewContainer" class="image-preview-container">
-                <!-- Existing server-saved images (served from their own URL) -->
-                <th:block th:if="${item != null and item.images() != null}">
-                    <div th:each="img : ${item.images()}" class="image-card">
-                        <img th:src="@{/lost-items/images/{id}(id=${img.id()})}" alt="Item Image">
-                        <button type="button" class="remove-btn" title="Remove image" onclick="removeServerImage(this)">×</button>
-                        <!-- must stay inside the form: the card is only hidden, never removed -->
-                        <input type="checkbox" name="deleteImageIds" th:value="${img.id()}" style="display: none;" />
+                    <div class="mb-3">
+                        <label for="title" class="form-label fw-semibold">Title</label>
+                        <input type="text" id="title" name="title" required class="form-control"
+                               th:value="${item != null} ?${item.title()} : ''">
                     </div>
-                </th:block>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label fw-semibold">Description</label>
+                        <textarea id="description" name="description" rows="4" required class="form-control"
+                                  th:text="${item != null} ?${item.description()} : ''"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="dateLost" class="form-label fw-semibold">Date Lost</label>
+                        <input type="datetime-local" id="dateLost" name="dateLost" required class="form-control"
+                               th:value="${dateLostValue}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="locationLost" class="form-label fw-semibold">Location Lost</label>
+                        <input type="text" id="locationLost" name="locationLost" required class="form-control"
+                               th:value="${item != null} ?${item.locationLost()} : ''">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="images" class="form-label fw-semibold">Upload Images (Multiple allowed - PNG, JPG, WebP only)</label>
+                        <input type="file" id="images" name="images" accept="image/png, image/jpeg, image/webp" multiple class="form-control">
+
+                        <!-- Image Preview Container directly below input without background box wrapper -->
+                        <div id="imagePreviewContainer" class="image-preview-container">
+                            <!-- Existing server-saved images -->
+                            <th:block th:if="${item != null and item.images() != null}">
+                                <div th:each="img : ${item.images()}" class="image-card">
+                                    <img th:src="@{/lost-items/images/{id}(id=${img.id()})}" alt="Item Image">
+                                    <button type="button" class="remove-btn" title="Remove image" onclick="removeServerImage(this)"><i class="bi bi-x"></i></button>
+                                    <input type="checkbox" name="deleteImageIds" th:value="${img.id()}" style="display: none;" />
+                                </div>
+                            </th:block>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <button type="submit" class="btn btn-primary-custom px-4" th:text="${item != null} ? 'Update' : 'Create'">Submit</button>
+                        <a th:href="@{/lost-items}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
             </div>
         </div>
-
-        <div>
-            <label for="images">Upload Images (Multiple allowed - PNG, JPG, WebP only)</label>
-            <input type="file" id="images" name="images" accept="image/png, image/jpeg, image/webp" multiple>
-        </div>
-
-        <div>
-            <button type="submit" th:text="${item != null} ? 'Update' : 'Create'">Submit</button>
-            <a th:href="@{/lost-items}">Cancel</a>
-        </div>
-    </form>
+    </div>
 
     <script>
         const imageInput = document.getElementById('images');
@@ -147,7 +151,7 @@
                         const btn = document.createElement('button');
                         btn.type = 'button';
                         btn.className = 'remove-btn';
-                        btn.innerHTML = '×';
+                        btn.innerHTML = '<i class="bi bi-x"></i>';
                         btn.title = 'Remove image';
                         btn.onclick = function() {
                             const newDt = new DataTransfer();
@@ -188,7 +192,6 @@
             if (checkbox) {
                 checkbox.checked = true;   // submitted as deleteImageIds
             }
-            // Hide, do NOT remove: removing the card would remove the checkbox from the form
             card.style.display = 'none';
         }
     </script>
