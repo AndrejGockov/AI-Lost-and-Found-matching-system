@@ -7,29 +7,19 @@ import java.util.Base64;
 
 public record DisplayItemImageResponseDto(
         String id,
-        int sizeBytes,
-        byte[] imgBytes
+        int sizeBytes
 ) {
     public static DisplayItemImageResponseDto from(LostItemImage image) {
         return new DisplayItemImageResponseDto(
                 image.getId(),
-                image.getSizeBytes(),
-                image.getImgBytes()
+                image.getSizeBytes()
         );
     }
 
     public static DisplayItemImageResponseDto from(FoundItemImage image) {
         return new DisplayItemImageResponseDto(
                 image.getId(),
-                image.getSizeBytes(),
-                image.getImgBytes()
+                image.getSizeBytes()
         );
-    }
-
-    public String getBase64Data() {
-        if (imgBytes == null || imgBytes.length == 0) {
-            return "";
-        }
-        return Base64.getEncoder().encodeToString(imgBytes);
     }
 }

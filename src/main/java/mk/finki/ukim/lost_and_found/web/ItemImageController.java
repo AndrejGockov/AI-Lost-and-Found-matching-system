@@ -38,7 +38,6 @@ public class ItemImageController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Found item images: only the holder, or anyone if the item is identifiable.
     // Transactional because image.getItem() is lazy.
     @GetMapping("/found-items/images/{imageId}")
     @ResponseBody
@@ -54,17 +53,26 @@ public class ItemImageController {
 
     private boolean canViewFoundImage(FoundItemImage image, User user) {
         FoundItem item = image.getItem();
-        return item.isIdentifiable() || item.getHolder().getId().equals(user.getId());
+
+        // Mirrors FoundItemApplicationServiceImpl#canViewFull:
+        // non-identifiable items are restricted to poster, holder, and non-students.
+        return !item.isIdentifiable()
+                || item.getPoster().getId().equals(user.getId())
+                || item.getHolder().getId().equals(user.getId())
+                || !userService.isStudent(user);
     }
 
     // Shared by both: content type detection + caching
     private ResponseEntity<byte[]> toResponse(byte[] bytes) {
-        String guessed = null;
+        MediaType type = MediaType.IMAGE_JPEG;
         try {
-            guessed = URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(bytes));
+            String guessed = URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(bytes));
+            if (guessed != null) {
+                type = MediaType.parseMediaType(guessed);
+            }
         } catch (Exception ignored) {
+            // fall back to IMAGE_JPEG
         }
-        MediaType type = guessed != null ? MediaType.parseMediaType(guessed) : MediaType.IMAGE_JPEG;
 
         return ResponseEntity.ok()
                 .contentType(type)

@@ -27,8 +27,7 @@
             <h3>Images</h3>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <div th:each="img : ${item.images}">
-                    <img th:if="${img.getBase64Data() != ''}"
-                         th:src="'data:image/jpeg;base64,' + ${img.getBase64Data()}"
+                    <img th:src="@{/found-items/images/{id}(id=${img.id})}"
                          alt="Found Item Image"
                          style="max-width: 200px; max-height: 200px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px;">
                 </div>

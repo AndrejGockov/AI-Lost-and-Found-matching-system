@@ -179,31 +179,38 @@ public class FoundItemController {
         return "redirect:/found-items";
     }
 
-    @PostMapping("/create-transfer-offer")
+    @GetMapping("/{id}/create-transfer-offer")
     public String createTransfer(@PathVariable String id,
                                  Principal principal,
                                  Model model) {
         return "";
     }
 
-    @PostMapping("/retract-transfer-offer")
+    @PostMapping("/{id}/create-transfer-offer")
+    public String addTransfer(@PathVariable String id,
+                                 Principal principal,
+                                 Model model) {
+        return "redirect:/found-items/" + id;
+    }
+
+    @PostMapping("/{id}/retract-transfer-offer")
     public String retractTransfer(@PathVariable String id,
                                   Principal principal,
                                   Model model) {
-        return "";
+        return "redirect:/found-items/" + id;
     }
 
     @PostMapping("/{id}/accept-transfer")
     public String acceptTransfer(@PathVariable String id,
                                  Principal principal,
                                  Model model) {
-        return "";
+        return "redirect:/found-items/" + id;
     }
 
     @PostMapping("/{id}/reject-transfer")
     public String rejectTransfer(@PathVariable String id,
                                  Principal principal,
                                  Model model) {
-        return "";
+        return "redirect:/found-items/" + id;
     }
 }
