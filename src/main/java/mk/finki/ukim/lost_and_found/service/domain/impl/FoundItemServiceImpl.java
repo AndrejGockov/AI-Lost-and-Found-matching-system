@@ -112,23 +112,21 @@ public class FoundItemServiceImpl implements FoundItemService {
         return existing;
     }
 
-    // Students filtering. identifiable selects which of the two found-items
-    // lists this page belongs to: true -> full/unrestricted list,
-    // false -> restricted list.
+    // Students filtering
     @Override
-    public Page<FoundItem> findPage(String title, boolean identifiable, int pageNum, int pageSize) {
+    public Page<FoundItem> findPage(String title, Boolean identifiable, int pageNum, int pageSize) {
         Specification<FoundItem> specification = Specification.allOf(
                 filterEqualsV(FoundItem.class, "status", ItemStatus.UNRESOLVED),
                 filterEqualsV(FoundItem.class, "identifiable", identifiable),
                 filterContainsText(FoundItem.class, "title", title)
         );
 
-        return foundItemRepository.findAll(specification, PageRequest.of(pageNum, pageSize, Sort.by(Sort.Direction.DESC, "datePosted")));
+        return foundItemRepository.findAll(specification, PageRequest.of(pageNum, pageSize, Sort.by(Sort.Direction.DESC, "lastUpdated")));
     }
 
     // Employees filtering
     @Override
-    public Page<FoundItem> findPage(String title, String posterName, ItemStatus status, boolean identifiable, int pageNum, int pageSize) {
+    public Page<FoundItem> findPage(String title, String posterName, ItemStatus status, Boolean identifiable, int pageNum, int pageSize) {
         Specification<FoundItem> specification = Specification.allOf(
                 filterEqualsV(FoundItem.class, "status", status),
                 filterEqualsV(FoundItem.class, "identifiable", identifiable),
@@ -136,6 +134,6 @@ public class FoundItemServiceImpl implements FoundItemService {
                 filterContainsText(FoundItem.class, "poster.name", posterName)
         );
 
-        return foundItemRepository.findAll(specification, PageRequest.of(pageNum, pageSize, Sort.by(Sort.Direction.DESC, "datePosted")));
+        return foundItemRepository.findAll(specification, PageRequest.of(pageNum, pageSize, Sort.by(Sort.Direction.DESC, "lastUpdated")));
     }
 }

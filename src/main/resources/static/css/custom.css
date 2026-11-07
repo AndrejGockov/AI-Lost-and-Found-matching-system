@@ -123,6 +123,14 @@
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
+.badge-relative-danger {
+    background-color: #f8d7da;
+    color: #842029;
+    padding: 0.25em 0.5em;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
 .table-dark {
     background-color: #1e293b;
     color: #fff;

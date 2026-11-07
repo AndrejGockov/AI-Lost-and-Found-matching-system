@@ -21,12 +21,13 @@
       <input type="text" name="title" th:value="${param.title}" class="form-control">
     </div>
 
-    <!-- employees only; applies to the unrestricted list -->
+    <!-- employees only -->
     <div th:unless="${isStudent}">
       <label class="form-label mb-1">Poster name</label>
       <input type="text" name="posterName" th:value="${param.posterName}" class="form-control">
     </div>
 
+    <!-- employees only -->
     <div th:unless="${isStudent}">
       <label class="form-label mb-1">Status</label>
       <select name="status" class="form-control">
@@ -38,26 +39,41 @@
       </select>
     </div>
 
+    <!-- everyone -->
+    <div>
+      <label class="form-label mb-1 d-block">Identifiable</label>
+      <div class="btn-group" role="group">
+        <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable=${null})}"
+           class="btn btn-sm"
+           th:classappend="${param.identifiable == null} ? 'btn-primary-custom' : 'btn-outline-secondary'">All</a>
+        <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable='true')}"
+           class="btn btn-sm"
+           th:classappend="${param.identifiable != null and param.identifiable[0] == 'true'} ? 'btn-primary-custom' : 'btn-outline-secondary'">Identifiable</a>
+        <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable='false')}"
+           class="btn btn-sm"
+           th:classappend="${param.identifiable != null and param.identifiable[0] == 'false'} ? 'btn-primary-custom' : 'btn-outline-secondary'">Not identifiable</a>
+      </div>
+    </div>
+
     <!-- keep the page size chosen in the paging fragment when filtering -->
     <input type="hidden" name="results" th:if="${param.results != null}" th:value="${param.results[0]}">
 
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search me-1"></i>Search</button>
-      <a th:if="${param.title != null and !param.title.empty} or ${param.posterName != null and !param.posterName.empty} or ${param.status != null and !param.status.empty}"
+      <a th:if="${param.title != null and !param.title.empty} or ${param.posterName != null and !param.posterName.empty} or ${param.status != null and !param.status.empty} or ${param.identifiable != null and !param.identifiable.empty}"
          th:href="@{/found-items}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Clear</a>
     </div>
   </form>
 
-  <!-- Unrestricted items: identifiable = true -->
-  <h2 class="h4 mt-4">Unrestricted items</h2>
-  <p th:if="${fullItems.empty}" class="text-muted">No unrestricted found items found.</p>
-  <div th:unless="${fullItems.empty}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3">
-    <div th:each="item : ${fullItems.content}" class="col">
+  <!-- Found items -->
+  <p th:if="${items.empty}" class="text-muted">No found items found.</p>
+  <div th:unless="${items.empty}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3">
+    <div th:each="item : ${items.content}" class="col">
       <div th:replace="~{fragments/itemCard :: itemCard(
               item=${item},
               basePath='/found-items',
               description=${item.description},
-              hasImages=${item.images != null and !item.images.empty},
+              hasImages=${!item.images.empty},
               canEdit=${item.holderId == user.id},
               showStatus=${!isStudent},
               posterName=${item.posterName},
@@ -65,29 +81,8 @@
     </div>
   </div>
 
-  <!-- Pagination for the unrestricted list -->
-  <div th:replace="~{fragments/paging :: pageSection(page=${fullItems})}"></div>
-
-  <!-- Restricted items: identifiable = false (no images, no description) -->
-  <h2 class="h4 mt-5">Restricted items</h2>
-  <p th:if="${restrictedItems.empty}" class="text-muted">No restricted found items found.</p>
-  <div th:unless="${restrictedItems.empty}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3">
-    <div th:each="item : ${restrictedItems.content}" class="col">
-      <!-- restricted DTO has no description/images, so both are passed as null -->
-      <div th:replace="~{fragments/itemCard :: itemCard(
-              item=${item},
-              basePath='/found-items',
-              description=${null},
-              hasImages=${null},
-              canEdit=${item.holderId == user.id},
-              showStatus=${!isStudent},
-              posterName=${item.posterName},
-              holderName=${item.holderName})}"></div>
-    </div>
-  </div>
-
-  <!-- Pagination for the restricted list -->
-  <div th:replace="~{fragments/paging :: pageSection(page=${restrictedItems})}"></div>
+  <!-- Pagination -->
+  <div th:replace="~{fragments/paging :: pageSection(page=${items})}"></div>
 </div>
 </body>
 </html>

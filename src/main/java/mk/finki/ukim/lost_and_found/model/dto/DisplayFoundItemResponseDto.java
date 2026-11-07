@@ -45,10 +45,36 @@ public record DisplayFoundItemResponseDto(
         );
     }
 
+    // Restricted version
+    public static DisplayFoundItemResponseDto fromRestricted(FoundItem item) {
+        return new DisplayFoundItemResponseDto(
+                item.getId(),
+                item.getPoster().getId(),
+                item.getPoster().getName(),
+                item.getHolder().getId(),
+                item.getHolder().getName(),
+                item.getTitle(),
+                // description hidden
+                null,
+                item.getDatePosted(),
+                item.getLastUpdated(),
+                // dateFound hidden
+                null,
+                // locationFound hidden
+                null,
+                item.isIdentifiable(),
+                item.getStatus(),
+                // images hidden
+                List.of(),
+                DisplayTransferFoundItemResponseDto.from(item.getTransfers())
+        );
+    }
+
     public static List<DisplayFoundItemResponseDto> from(List<FoundItem> items) {
-        return items
-                .stream()
-                .map(DisplayFoundItemResponseDto::from)
-                .toList();
+        return items.stream().map(DisplayFoundItemResponseDto::from).toList();
+    }
+
+    public static List<DisplayFoundItemResponseDto> fromRestricted(List<FoundItem> items) {
+        return items.stream().map(DisplayFoundItemResponseDto::fromRestricted).toList();
     }
 }

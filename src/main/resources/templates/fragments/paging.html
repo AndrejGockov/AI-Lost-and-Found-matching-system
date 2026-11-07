@@ -36,9 +36,9 @@
                 <label for="results" class="mb-0 text-nowrap me-2">Резултати на страна: </label>
                 <select id="results" class="form-control custom-select" style="max-width: 90px;"
                         onchange="updateQueryStringParameter('results',this.value)">
-                    <option value="5" th:selected="${page.size == 5}">5</option>
-                    <option value="10" th:selected="${page.size == 10}">10</option>
-                    <option value="20" th:selected="${page.size == 20}">20</option>
+<!--                    <option value="6" th:selected="${page.size == 6}">6</option>-->
+                    <option value="12" th:selected="${page.size == 12}">12</option>
+<!--                    <option value="20" th:selected="${page.size == 20}">20</option>-->
                     <option value="50" th:selected="${page.size == 50}">50</option>
                     <option value="100" th:selected="${page.size == 100}">100</option>
                     <option value="1000" th:selected="${page.size == 1000}">1000</option>

@@ -5,7 +5,6 @@ import mk.finki.ukim.lost_and_found.model.domain.FoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.dto.CreateOrUpdateFoundItemRequestDto;
 import mk.finki.ukim.lost_and_found.model.dto.DisplayFoundItemResponseDto;
-import mk.finki.ukim.lost_and_found.model.dto.DisplayRestrictedFoundItemResponseDto;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.FoundItemNotFoundException;
 import mk.finki.ukim.lost_and_found.model.exceptions.OnlyHolderCanModifyPostException;
@@ -37,10 +36,10 @@ public class FoundItemApplicationServiceImpl implements FoundItemApplicationServ
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<DisplayRestrictedFoundItemResponseDto> findByIdRestricted(String id) {
+    public Optional<DisplayFoundItemResponseDto> findByIdRestricted(String id) {
         return foundItemService
                 .findById(id)
-                .map(DisplayRestrictedFoundItemResponseDto::from);
+                .map(DisplayFoundItemResponseDto::fromRestricted);
     }
 
     @Override
@@ -116,27 +115,17 @@ public class FoundItemApplicationServiceImpl implements FoundItemApplicationServ
         return dto;
     }
 
-    // The full/unrestricted list: items where identifiable = true.
     @Override
     @Transactional(readOnly = true)
-    public Page<DisplayFoundItemResponseDto> findPage(String title, String posterName, ItemStatus status, User user, int pageNum, int pageSize) {
+    public Page<DisplayFoundItemResponseDto> findPage(String title, String posterName, ItemStatus status, Boolean identifiable, User user, int pageNum, int pageSize) {
         if (userService.isStudent(user)) {
             return foundItemService
-                    .findPage(title, true, pageNum, pageSize)
+                    .findPage(title, identifiable, pageNum, pageSize)
                     .map(DisplayFoundItemResponseDto::from);
         }
 
         return foundItemService
-                .findPage(title, posterName, status, true, pageNum, pageSize)
+                .findPage(title, posterName, status, identifiable, pageNum, pageSize)
                 .map(DisplayFoundItemResponseDto::from);
-    }
-
-    // The restricted list: items where identifiable = false.
-    @Override
-    @Transactional(readOnly = true)
-    public Page<DisplayRestrictedFoundItemResponseDto> findPageRestricted(String title, int pageNum, int pageSize) {
-        return foundItemService
-                .findPage(title, false, pageNum, pageSize)
-                .map(DisplayRestrictedFoundItemResponseDto::from);
     }
 }

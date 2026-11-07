@@ -14,6 +14,7 @@ import mk.finki.ukim.lost_and_found.model.exceptions.FoundItemNotFoundException;
 import mk.finki.ukim.lost_and_found.model.exceptions.InvalidUsernameException;
 import mk.finki.ukim.lost_and_found.service.application.FoundItemApplicationService;
 import mk.finki.ukim.lost_and_found.service.domain.UserService;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -31,6 +32,7 @@ public class FoundItemController {
     public String getFoundItemsPage(@RequestParam(required = false) String title,
                                     @RequestParam(required = false) String posterName,
                                     @RequestParam(required = false) ItemStatus status,
+                                    @RequestParam(required = false) Boolean identifiable,
                                     @RequestParam(defaultValue = "1") int pageNum,
                                     @RequestParam(name = "results", defaultValue = "10") int pageSize,
                                     Principal principal,
@@ -38,12 +40,10 @@ public class FoundItemController {
         User user = userService.findByUsername(principal.getName());
         boolean isStudent = userService.isStudent(user);
 
-        // Two lists, split by identifiable: fullItems (identifiable = true)
-        // and restrictedItems (identifiable = false). isStudent only limits
-        // which extra filters (posterName/status) apply to fullItems.
-        model.addAttribute("fullItems", foundItemApplicationService.findPage(title, posterName, status, user, pageNum - 1, pageSize));
-        model.addAttribute("restrictedItems", foundItemApplicationService.findPageRestricted(title, pageNum - 1, pageSize));
+        Page<DisplayFoundItemResponseDto> items =
+                foundItemApplicationService.findPage(title, posterName, status, identifiable, user, pageNum - 1, pageSize);
 
+        model.addAttribute("items", items);
         model.addAttribute("user", user);
         model.addAttribute("isStudent", isStudent);
         model.addAttribute("itemStatus", ItemStatus.values());

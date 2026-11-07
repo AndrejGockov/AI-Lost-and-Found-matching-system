@@ -18,8 +18,7 @@
             <div th:if="${holderName != null and !#strings.isEmpty(holderName)}">
                 Holder: <span th:text="${holderName}" class="fw-semibold"></span>
             </div>
-            <div>Posted: <span th:text="${#temporals.format(item.datePosted, 'dd.MM.yyyy')}"></span></div>
-            <div>Updated: <span th:text="${#temporals.format(item.lastUpdated, 'dd.MM.yyyy')}"></span></div>
+            <div>Posted: <span th:text="${#temporals.format(item.datePosted, 'dd.MM.yyyy')}"></span> Updated: <span th:text="${#temporals.format(item.lastUpdated, 'dd.MM.yyyy')}"></span></div>
         </div>
 
         <!-- First 100 characters of the description, when there is one -->
@@ -29,14 +28,14 @@
 
         <!-- Images indicator & Status badge at the bottom -->
         <div class="mt-auto pt-2 d-flex flex-column gap-2">
-            <p th:if="${hasImages != null and hasImages}" class="mb-0 small">
-                <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Contains images</span>
-            </p>
             <div th:if="${showStatus}" class="small text-muted d-flex align-items-center gap-1">
                 <span>Status:</span>
                 <span th:text="${item.status.displayName}"
-                      th:classappend="${item.status.name() == 'UNRESOLVED'} ? 'badge-relative badge-relative-tomorrow' : 'badge-relative badge-relative-soon'">Status</span>
+                      th:classappend="${item.status.name() == 'PERMANENTLY_LOST'} ? 'badge-relative badge-relative-danger' : (${item.status.name() == 'UNRESOLVED'} ? 'badge-relative badge-relative-tomorrow' : 'badge-relative badge-relative-soon')">Status</span>
             </div>
+            <p th:if="${hasImages != null and hasImages}" class="mb-0 small">
+                <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Contains images</span>
+            </p>
         </div>
     </div>
 
