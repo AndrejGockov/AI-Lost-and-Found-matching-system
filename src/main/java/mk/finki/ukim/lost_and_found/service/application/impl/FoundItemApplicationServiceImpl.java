@@ -1,5 +1,6 @@
 package mk.finki.ukim.lost_and_found.service.application.impl;
 
+import java.util.List;
 import java.util.Optional;
 import mk.finki.ukim.lost_and_found.model.domain.FoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.User;
@@ -24,6 +25,12 @@ public class FoundItemApplicationServiceImpl implements FoundItemApplicationServ
     public FoundItemApplicationServiceImpl(UserService userService, FoundItemService foundItemService) {
         this.userService = userService;
         this.foundItemService = foundItemService;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DisplayFoundItemResponseDto> findAllByUser(User user) {
+        return DisplayFoundItemResponseDto.from(foundItemService.findAllByUser(user));
     }
 
     @Override

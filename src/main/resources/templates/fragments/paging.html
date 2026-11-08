@@ -32,18 +32,19 @@
         </div>
 
         <div class="col-12 col-md-4">
-            <div class="d-flex results-container align-items-center justify-content-md-end mb-0">
-                <label for="results" class="mb-0 text-nowrap me-2">Резултати на страна: </label>
-                <select id="results" class="form-control custom-select" style="max-width: 90px;"
+            <div class="d-flex results-container align-items-center mb-3">
+                <label for="results" class="mb-0">Резултати на страна: </label>
+                <select id="results" class="form-control custom-select" style="max-width: 100px;"
                         onchange="updateQueryStringParameter('results',this.value)">
-<!--                    <option value="6" th:selected="${page.size == 6}">6</option>-->
+                    <option value="9" th:selected="${page.size == 9}">9</option>
                     <option value="12" th:selected="${page.size == 12}">12</option>
-<!--                    <option value="20" th:selected="${page.size == 20}">20</option>-->
-                    <option value="50" th:selected="${page.size == 50}">50</option>
+                    <option value="15" th:selected="${page.size == 15}">15</option>
+                    <option value="30" th:selected="${page.size == 30}">30</option>
+                    <option value="60" th:selected="${page.size == 60}">60</option>
                     <option value="100" th:selected="${page.size == 100}">100</option>
                     <option value="1000" th:selected="${page.size == 1000}">1000</option>
                 </select>
-                <span class="ms-2 me-1 text-nowrap"> / Вкупно: </span>
+                <span class="ms-1 me-1"> / Вкупно: </span>
                 <b class="ms-1" th:text="${page.totalElements}"></b>
             </div>
         </div>

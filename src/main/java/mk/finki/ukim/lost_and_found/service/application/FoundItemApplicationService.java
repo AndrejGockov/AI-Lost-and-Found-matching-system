@@ -1,6 +1,8 @@
 package mk.finki.ukim.lost_and_found.service.application;
 
+import java.util.List;
 import java.util.Optional;
+
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.dto.CreateOrUpdateFoundItemRequestDto;
 import mk.finki.ukim.lost_and_found.model.dto.DisplayFoundItemResponseDto;
@@ -8,6 +10,8 @@ import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import org.springframework.data.domain.Page;
 
 public interface FoundItemApplicationService {
+
+    List<DisplayFoundItemResponseDto> findAllByUser(User user);
 
     Optional<DisplayFoundItemResponseDto> findById(String id);
 

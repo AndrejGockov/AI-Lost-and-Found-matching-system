@@ -34,7 +34,7 @@ public class FoundItemController {
                                     @RequestParam(required = false) ItemStatus status,
                                     @RequestParam(required = false) Boolean identifiable,
                                     @RequestParam(defaultValue = "1") int pageNum,
-                                    @RequestParam(name = "results", defaultValue = "10") int pageSize,
+                                    @RequestParam(name = "results", defaultValue = "9") int pageSize,
                                     Principal principal,
                                     Model model) {
         User user = userService.findByUsername(principal.getName());

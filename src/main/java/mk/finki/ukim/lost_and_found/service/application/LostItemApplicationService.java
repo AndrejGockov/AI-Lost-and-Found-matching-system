@@ -6,9 +6,12 @@ import mk.finki.ukim.lost_and_found.model.dto.DisplayLostItemResponseDto;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface LostItemApplicationService {
+    List<DisplayLostItemResponseDto> findAllByUser(User user);
+
     Optional<DisplayLostItemResponseDto> findById(String id);
 
     DisplayLostItemResponseDto create(CreateOrUpdateLostItemRequestDto createOrUpdateLostItemRequestDto, User user);
