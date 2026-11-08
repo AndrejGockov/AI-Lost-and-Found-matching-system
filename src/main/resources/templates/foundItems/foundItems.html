@@ -6,67 +6,80 @@
   <meta charset="UTF-8">
 </head>
 <body>
-<div layout:fragment="content" class="container px-2 py-3">
-  <div class="d-flex align-items-center gap-3 mb-3">
-    <h1 class="mb-0">Found items</h1>
-    <a th:href="@{/found-items/add}" class="btn btn-primary-custom btn-sm"><i class="bi bi-plus-circle me-1"></i>Add found item</a>
+<div layout:fragment="content" class="container mt-4 mb-5">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center">
+      <i class="fas fa-box-open fs-3 me-3 text-dark"></i>
+      <h4 class="mb-0 fw-bold">Found items</h4>
+    </div>
+    <a th:href="@{/found-items/add}" class="btn btn-primary-custom btn-sm">
+      <i class="fas fa-plus-circle me-1"></i>Add found item
+    </a>
   </div>
 
   <p th:if="${error}" th:text="${error}" class="alert alert-danger"></p>
 
-  <!-- Filter form -->
-  <form method="get" th:action="@{/found-items}" class="mb-4 d-flex flex-wrap align-items-end gap-2">
-    <div>
-      <label class="form-label mb-1">Title</label>
-      <input type="text" name="title" th:value="${param.title}" class="form-control">
+  <!-- Filter form card container -->
+  <div class="card shadow-sm mb-4 border filter-card">
+    <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2 border-bottom text-dark">
+      <i class="fas fa-filter me-2"></i>Filters
     </div>
+    <div class="card-body">
+      <form method="get" th:action="@{/found-items}" class="d-flex flex-wrap align-items-end gap-3">
+        <div class="flex-grow-1" style="min-width: 180px;">
+          <label class="form-label mb-1 fw-semibold"><i class="fas fa-tag text-primary-custom me-2"></i>Title</label>
+          <input type="text" name="title" th:value="${param.title}" class="form-control">
+        </div>
 
-    <!-- employees only -->
-    <div th:unless="${isStudent}">
-      <label class="form-label mb-1">Poster name</label>
-      <input type="text" name="posterName" th:value="${param.posterName}" class="form-control">
+        <!-- employees only -->
+        <div th:unless="${isStudent}" class="flex-grow-1" style="min-width: 180px;">
+          <label class="form-label mb-1 fw-semibold"><i class="fas fa-user-tie text-primary-custom me-2"></i>Poster name</label>
+          <input type="text" name="posterName" th:value="${param.posterName}" class="form-control">
+        </div>
+
+        <!-- employees only -->
+        <div th:unless="${isStudent}" class="flex-grow-1" style="min-width: 180px;">
+          <label class="form-label mb-1 fw-semibold"><i class="fas fa-info-circle text-primary-custom me-2"></i>Status</label>
+          <select name="status" class="form-control">
+            <option value="">All</option>
+            <option th:each="s : ${itemStatus}"
+                    th:value="${s}"
+                    th:text="${s.displayName}"
+                    th:selected="${param.status != null and param.status[0] == s.name()}"></option>
+          </select>
+        </div>
+
+        <!-- everyone -->
+        <div>
+          <label class="form-label mb-1 fw-semibold d-block"><i class="fas fa-check-circle text-primary-custom me-2"></i>Identifiable</label>
+          <div class="btn-group" role="group" style="height: 38px;">
+            <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable=${null})}"
+               class="btn btn-sm d-flex align-items-center px-3"
+               th:classappend="${param.identifiable == null} ? 'btn-primary-custom' : 'btn-outline-secondary'">All</a>
+            <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable='true')}"
+               class="btn btn-sm d-flex align-items-center px-3"
+               th:classappend="${param.identifiable != null and param.identifiable[0] == 'true'} ? 'btn-primary-custom' : 'btn-outline-secondary'">Identifiable</a>
+            <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable='false')}"
+               class="btn btn-sm d-flex align-items-center px-3"
+               th:classappend="${param.identifiable != null and param.identifiable[0] == 'false'} ? 'btn-primary-custom' : 'btn-outline-secondary'">Not identifiable</a>
+          </div>
+        </div>
+
+        <!-- keep the page size chosen in the paging fragment when filtering -->
+        <input type="hidden" name="results" th:if="${param.results != null}" th:value="${param.results[0]}">
+
+        <div class="d-flex gap-2 ms-auto">
+          <button type="submit" class="btn btn-primary-custom"><i class="fas fa-search me-2"></i>Search</button>
+          <a th:if="${param.title != null and !param.title.empty} or ${param.posterName != null and !param.posterName.empty} or ${param.status != null and !param.status.empty} or ${param.identifiable != null and !param.identifiable.empty}"
+             th:href="@{/found-items}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Clear</a>
+        </div>
+      </form>
     </div>
-
-    <!-- employees only -->
-    <div th:unless="${isStudent}">
-      <label class="form-label mb-1">Status</label>
-      <select name="status" class="form-control">
-        <option value="">All</option>
-        <option th:each="s : ${itemStatus}"
-                th:value="${s}"
-                th:text="${s.displayName}"
-                th:selected="${param.status != null and param.status[0] == s.name()}"></option>
-      </select>
-    </div>
-
-    <!-- everyone -->
-    <div>
-      <label class="form-label mb-1 d-block">Identifiable</label>
-      <div class="btn-group" role="group">
-        <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable=${null})}"
-           class="btn btn-sm"
-           th:classappend="${param.identifiable == null} ? 'btn-primary-custom' : 'btn-outline-secondary'">All</a>
-        <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable='true')}"
-           class="btn btn-sm"
-           th:classappend="${param.identifiable != null and param.identifiable[0] == 'true'} ? 'btn-primary-custom' : 'btn-outline-secondary'">Identifiable</a>
-        <a th:href="@{/found-items(title=${param.title}, posterName=${param.posterName}, status=${param.status}, identifiable='false')}"
-           class="btn btn-sm"
-           th:classappend="${param.identifiable != null and param.identifiable[0] == 'false'} ? 'btn-primary-custom' : 'btn-outline-secondary'">Not identifiable</a>
-      </div>
-    </div>
-
-    <!-- keep the page size chosen in the paging fragment when filtering -->
-    <input type="hidden" name="results" th:if="${param.results != null}" th:value="${param.results[0]}">
-
-    <div class="d-flex gap-2">
-      <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search me-1"></i>Search</button>
-      <a th:if="${param.title != null and !param.title.empty} or ${param.posterName != null and !param.posterName.empty} or ${param.status != null and !param.status.empty} or ${param.identifiable != null and !param.identifiable.empty}"
-         th:href="@{/found-items}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Clear</a>
-    </div>
-  </form>
+  </div>
 
   <!-- Found items -->
-  <p th:if="${items.empty}" class="text-muted">No found items found.</p>
+  <p th:if="${items.empty}" class="text-muted">No items found.</p>
+
   <div th:unless="${items.empty}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3">
     <div th:each="item : ${items.content}" class="col">
       <div th:replace="~{fragments/itemCard :: itemCard(
