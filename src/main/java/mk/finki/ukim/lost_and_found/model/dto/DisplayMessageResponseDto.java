@@ -5,7 +5,7 @@ import mk.finki.ukim.lost_and_found.model.domain.Message;
 import java.time.Instant;
 import java.util.List;
 
-public record MessageDto(
+public record DisplayMessageResponseDto(
         String id,
         String senderId,
         String senderName,
@@ -15,12 +15,12 @@ public record MessageDto(
         String receiverAlias,
         String content,
         Instant dateSent,
-        List<AttachmentDto> attachments
+        List<AttachmentInfo> attachments
 ) {
-    public record AttachmentDto(String id, int sizeBytes) {}
+    public record AttachmentInfo(String id, int sizeBytes) {}
 
-    public static MessageDto from(Message m) {
-        return new MessageDto(
+    public static DisplayMessageResponseDto from(Message m) {
+        return new DisplayMessageResponseDto(
                 m.getId(),
                 m.getSender().getId(),
                 m.getSender().getName(),
@@ -31,7 +31,7 @@ public record MessageDto(
                 m.getContent(),
                 m.getDateSent(),
                 m.getAttachments().stream()
-                        .map(a -> new AttachmentDto(a.getId(), a.getSizeBytes()))
+                        .map(a -> new AttachmentInfo(a.getId(), a.getSizeBytes()))
                         .toList()
         );
     }

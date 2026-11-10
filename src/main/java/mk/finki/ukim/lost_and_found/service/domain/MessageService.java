@@ -1,24 +1,28 @@
 package mk.finki.ukim.lost_and_found.service.domain;
 
+import mk.finki.ukim.lost_and_found.model.domain.Message;
 import mk.finki.ukim.lost_and_found.model.domain.MessageAttachment;
-import mk.finki.ukim.lost_and_found.model.dto.ConversationDto;
-import mk.finki.ukim.lost_and_found.model.dto.MessageDto;
-import org.springframework.web.multipart.MultipartFile;
+import mk.finki.ukim.lost_and_found.model.domain.User;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MessageService {
 
-    MessageDto send(String senderId, String receiverId, String content, List<MultipartFile> files);
+    Message send(User sender, User receiver, String content, List<byte[]> attachments);
 
-    List<ConversationDto> getConversations(String userId);
+    /** Newest first. */
+    Page<Message> findConversation(User user, User other, int pageNum, int pageSize);
 
-    /** Messages of a conversation, oldest first within the requested page (page 0 = newest messages). */
-    List<MessageDto> getConversation(String userId, String otherUserId, int page, int size);
+    List<Message> findLatestMessagePerConversation(User user);
 
-    MessageDto getById(String userId, String messageId);
+    /** Empty if the message doesn't exist or the user is not its sender/receiver. */
+    Optional<Message> findById(String id, User user);
 
-    void delete(String userId, String messageId);
+    /** Empty if the message doesn't exist or the user is not its sender/receiver. */
+    Optional<MessageAttachment> findAttachmentById(String attachmentId, User user);
 
-    MessageAttachment getAttachment(String userId, String attachmentId);
+    /** Only the sender may delete. Empty if the message doesn't exist or the user is not a participant. */
+    Optional<Message> deleteById(String id, User user);
 }

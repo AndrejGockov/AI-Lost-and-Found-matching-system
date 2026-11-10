@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .chat-list { max-height: 560px; overflow-y: auto; }
+        .chat-list .conv-item { cursor: pointer; border-left: 3px solid transparent; }
+        .chat-list .conv-item.active { background: #f1f3f5; border-left-color: var(--mine-bg, #0d6efd); }
+        .chat-list .conv-item:hover { background: #f8f9fa; }
+        .chat-thread { height: 440px; overflow-y: auto; background: #fafafa; }
+        .msg-row { display: flex; margin-bottom: .6rem; }
+        .msg-row.mine { justify-content: flex-end; }
+        .msg-bubble { max-width: 75%; padding: .5rem .75rem; border-radius: .75rem; background: #fff;
+            border: 1px solid #dee2e6; word-wrap: break-word; white-space: pre-wrap; }
+        .msg-row.mine .msg-bubble { background: var(--mine-bg, #0d6efd); color: #fff; border-color: transparent; }
+        .msg-meta { font-size: .7rem; opacity: .75; margin-top: .25rem; }
+        .msg-att img { max-width: 220px; max-height: 180px; border-radius: .5rem; display: block; margin-top: .4rem; }
+        .msg-att a { color: inherit; text-decoration: underline; font-size: .85rem; display: inline-block; margin-top: .3rem; }
+        .msg-del { background: none; border: 0; color: inherit; opacity: .6; padding: 0 .25rem; }
+        .msg-del:hover { opacity: 1; }
+        .preview-chip { font-size: .8rem; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="container mt-4 mb-5">
+
+    <!-- Title -->
+    <div class="d-flex align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center me-2">
+            <i class="fas fa-comments fs-3 me-3 text-dark"></i>
+            <h4 class="mb-0 fw-bold">Messages</h4>
+        </div>
+    </div>
+
+    <div id="errorBox" class="alert alert-danger d-none"></div>
+
+    <div class="row g-3">
+        <!-- Conversations -->
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm border filter-card h-100">
+                <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2 border-bottom text-dark">
+                    <i class="fas fa-inbox me-2"></i>Conversations
+                </div>
+                <div class="card-body border-bottom position-relative">
+                    <input type="text" id="userSearch" class="form-control form-control-sm"
+                           placeholder="Search users by name or ID..." autocomplete="off">
+                    <div id="userResults" class="list-group position-absolute shadow-sm d-none"
+                         style="z-index: 20; left: 1rem; right: 1rem;"></div>
+                </div>
+                <div id="conversationList" class="chat-list list-group list-group-flush"></div>
+                <p id="noConversations" class="text-muted p-3 mb-0 d-none">No conversations yet.</p>
+            </div>
+        </div>
+
+        <!-- Thread -->
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border filter-card h-100">
+                <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2 border-bottom text-dark">
+                    <i class="fas fa-user me-2"></i><span id="threadTitle">Select a conversation</span>
+                </div>
+
+                <div id="threadBox" class="chat-thread p-3">
+                    <p id="threadPlaceholder" class="text-muted mb-0">
+                        Pick a conversation on the left or start a new one with a user ID.
+                    </p>
+                    <div id="loadOlderWrap" class="text-center mb-3 d-none">
+                        <button type="button" id="loadOlderBtn" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-history me-1"></i>Load older messages
+                        </button>
+                    </div>
+                    <div id="messages"></div>
+                </div>
+
+                <div class="card-body border-top">
+                    <form id="sendForm" class="d-none">
+                        <div id="filePreview" class="d-flex flex-wrap gap-2 mb-2"></div>
+                        <div class="d-flex align-items-end gap-2">
+                            <label class="btn btn-outline-secondary mb-0" title="Attach files (max 5, 5 MB each)">
+                                <i class="fas fa-paperclip"></i>
+                                <input type="file" id="fileInput" multiple hidden>
+                            </label>
+                            <textarea id="contentInput" class="form-control" rows="2" maxlength="5000"
+                                      placeholder="Write a message..."></textarea>
+                            <button type="submit" id="sendBtn" class="btn btn-primary-custom">
+                                <i class="fas fa-paper-plane me-1"></i>Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        (function () {
+            const ME = /*[[${user.id}]]*/ '';
+            const CSRF_TOKEN = /*[[${csrfToken}]]*/ null;
+            const CSRF_HEADER = /*[[${csrfHeader}]]*/ null;
+            const API = /*[[@{/messages/api}]]*/ '/messages/api';
+            const PAGE_SIZE = 30;
+            const MAX_FILES = 5;
+            const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+            // Use the site's primary button colour for my message bubbles
+            (function applyThemeColour() {
+                const probe = document.createElement('button');
+                probe.className = 'btn btn-primary-custom';
+                probe.style.display = 'none';
+                document.body.appendChild(probe);
+                const bg = getComputedStyle(probe).backgroundColor;
+                document.body.removeChild(probe);
+                if (bg && bg !== 'rgba(0, 0, 0, 0)') document.documentElement.style.setProperty('--mine-bg', bg);
+            })();
+
+            const $ = (id) => document.getElementById(id);
+            const els = {
+                list: $('conversationList'), none: $('noConversations'), title: $('threadTitle'),
+                box: $('threadBox'), placeholder: $('threadPlaceholder'), messages: $('messages'),
+                olderWrap: $('loadOlderWrap'), olderBtn: $('loadOlderBtn'), send: $('sendForm'),
+                content: $('contentInput'), file: $('fileInput'), preview: $('filePreview'),
+                sendBtn: $('sendBtn'), error: $('errorBox'), search: $('userSearch'), results: $('userResults')
+            };
+
+            const state = { otherId: null, otherLabel: null, nextPage: 1, hasOlder: false, files: [], knownIds: new Set() };
+
+            // ---------- helpers ----------
+            function showError(msg) {
+                els.error.textContent = msg;
+                els.error.classList.remove('d-none');
+                setTimeout(() => els.error.classList.add('d-none'), 6000);
+            }
+
+            async function api(path, options = {}) {
+                options.headers = options.headers || {};
+                if (CSRF_TOKEN && CSRF_HEADER && options.method && options.method !== 'GET') {
+                    options.headers[CSRF_HEADER] = CSRF_TOKEN;
+                }
+                const res = await fetch(API + path, options);
+                if (!res.ok) {
+                    let msg = res.status === 404 ? 'Not found.' : 'Request failed (' + res.status + ').';
+                    try { const j = await res.json(); if (j.message) msg = j.message; } catch (e) { /* no body */ }
+                    const err = new Error(msg);
+                    err.status = res.status;
+                    throw err;
+                }
+                return res.status === 204 ? null : res.json();
+            }
+
+            const label = (name, alias, id) => name || alias || id;
+            const fmtSize = (b) => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
+            const fmtDate = (iso) => new Date(iso).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+            const nearBottom = () => els.box.scrollHeight - els.box.scrollTop - els.box.clientHeight < 80;
+
+            // ---------- conversations ----------
+            async function loadConversations() {
+                try {
+                    const convs = await api('/conversations');
+                    els.list.innerHTML = '';
+                    els.none.classList.toggle('d-none', convs.length > 0 || state.otherId !== null);
+                    convs.forEach(c => {
+                        const a = document.createElement('a');
+                        a.className = 'list-group-item conv-item' + (c.otherUserId === state.otherId ? ' active' : '');
+                        const name = document.createElement('div');
+                        name.className = 'fw-semibold';
+                        name.textContent = label(c.otherUserName, c.otherUserAlias, c.otherUserId);
+                        const last = document.createElement('div');
+                        last.className = 'small text-muted text-truncate';
+                        const prefix = c.lastMessageSenderId === ME ? 'You: ' : '';
+                        last.textContent = prefix + (c.lastMessageContent || (c.lastMessageHasAttachments ? '📎 Attachment' : ''));
+                        const date = document.createElement('div');
+                        date.className = 'small text-muted';
+                        date.textContent = fmtDate(c.lastMessageDate);
+                        a.append(name, last, date);
+                        a.addEventListener('click', () => openConversation(c.otherUserId));
+                        els.list.appendChild(a);
+                    });
+                } catch (e) { showError(e.message); }
+            }
+
+            // ---------- thread ----------
+            async function openConversation(otherId) {
+                if (otherId === ME) { showError('You cannot send a message to yourself.'); return; }
+
+                let other, page;
+                try {
+                    other = await api('/users/' + encodeURIComponent(otherId));
+                    page = await api('/conversations/' + encodeURIComponent(other.id) + '?page=0&size=' + PAGE_SIZE);
+                } catch (e) {
+                    showError(e.status === 404 ? 'User "' + otherId + '" was not found.' : e.message);
+                    return;
+                }
+
+                state.otherId = other.id;
+                state.otherLabel = label(other.name, other.alias, other.id);
+                state.nextPage = 1;
+                state.knownIds = new Set();
+                state.hasOlder = !page.last;
+                els.messages.innerHTML = '';
+                els.title.textContent = state.otherLabel;
+                els.send.classList.remove('d-none');
+                els.olderWrap.classList.toggle('d-none', !state.hasOlder);
+                history.replaceState(null, '', '?with=' + encodeURIComponent(other.id));
+
+                page.content.slice().reverse().forEach(m => appendMessage(m));
+                if (page.content.length === 0) {
+                    els.placeholder.textContent = 'No messages yet. Say hello!';
+                    els.placeholder.classList.remove('d-none');
+                } else {
+                    els.placeholder.classList.add('d-none');
+                }
+                els.box.scrollTop = els.box.scrollHeight;
+                loadConversations();
+            }
+
+            async function loadOlder() {
+                try {
+                    const prevHeight = els.box.scrollHeight;
+                    const page = await api('/conversations/' + encodeURIComponent(state.otherId)
+                        + '?page=' + state.nextPage + '&size=' + PAGE_SIZE);
+                    state.nextPage++;
+                    state.hasOlder = !page.last;
+                    els.olderWrap.classList.toggle('d-none', !state.hasOlder);
+                    // page.content is newest-first; prepend each so the oldest ends up on top
+                    page.content.forEach(m => prependMessage(m));
+                    els.box.scrollTop = els.box.scrollHeight - prevHeight;
+                } catch (e) { showError(e.message); }
+            }
+
+            async function refreshThread() {
+                if (!state.otherId) return;
+                try {
+                    const page = await api('/conversations/' + encodeURIComponent(state.otherId) + '?page=0&size=' + PAGE_SIZE);
+                    const stick = nearBottom();
+                    const fresh = page.content.filter(m => !state.knownIds.has(m.id)).reverse();
+                    fresh.forEach(m => appendMessage(m));
+                    // remove bubbles of messages that were deleted
+                    const live = new Set(page.content.map(m => m.id));
+                    els.messages.querySelectorAll('.msg-row').forEach(row => {
+                        const oldestLoaded = page.content.length ? page.content[page.content.length - 1].dateSent : null;
+                        if (!live.has(row.dataset.id) && !state.hasOlder) { row.remove(); state.knownIds.delete(row.dataset.id); }
+                    });
+                    if (fresh.length) els.placeholder.classList.add('d-none');
+                    if (stick && fresh.length) els.box.scrollTop = els.box.scrollHeight;
+                } catch (e) { /* silent on background refresh */ }
+            }
+
+            function buildMessage(m) {
+                const mine = m.senderId === ME;
+                const row = document.createElement('div');
+                row.className = 'msg-row' + (mine ? ' mine' : '');
+                row.dataset.id = m.id;
+
+                const bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+
+                if (m.content) {
+                    const text = document.createElement('div');
+                    text.textContent = m.content;
+                    bubble.appendChild(text);
+                }
+
+                (m.attachments || []).forEach(att => {
+                    const url = API + '/attachments/' + encodeURIComponent(att.id);
+                    const wrap = document.createElement('div');
+                    wrap.className = 'msg-att';
+                    const link = document.createElement('a');
+                    link.href = url; link.target = '_blank'; link.rel = 'noopener';
+                    const img = document.createElement('img');
+                    img.src = url; img.alt = 'Attachment';
+                    img.addEventListener('error', () => {
+                        img.remove();
+                        link.innerHTML = '';
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-paperclip me-1';
+                        link.append(icon, document.createTextNode('Attachment (' + fmtSize(att.sizeBytes) + ')'));
+                    });
+                    link.appendChild(img);
+                    wrap.appendChild(link);
+                    bubble.appendChild(wrap);
+                });
+
+                const meta = document.createElement('div');
+                meta.className = 'msg-meta d-flex align-items-center justify-content-end gap-1';
+                meta.append(document.createTextNode(fmtDate(m.dateSent)));
+                if (mine) {
+                    const del = document.createElement('button');
+                    del.type = 'button'; del.className = 'msg-del'; del.title = 'Delete message';
+                    del.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                    del.addEventListener('click', () => deleteMessage(m.id, row));
+                    meta.appendChild(del);
+                }
+                bubble.appendChild(meta);
+                row.appendChild(bubble);
+                return row;
+            }
+
+            function appendMessage(m) {
+                if (state.knownIds.has(m.id)) return;
+                state.knownIds.add(m.id);
+                els.messages.appendChild(buildMessage(m));
+            }
+
+            function prependMessage(m) {
+                if (state.knownIds.has(m.id)) return;
+                state.knownIds.add(m.id);
+                els.messages.insertBefore(buildMessage(m), els.messages.firstChild);
+            }
+
+            async function deleteMessage(id, row) {
+                if (!confirm('Delete this message?')) return;
+                try {
+                    await api('/' + encodeURIComponent(id), { method: 'DELETE' });
+                    row.remove();
+                    state.knownIds.delete(id);
+                    loadConversations();
+                } catch (e) { showError(e.message); }
+            }
+
+            // ---------- sending ----------
+            function renderFilePreview() {
+                els.preview.innerHTML = '';
+                state.files.forEach((f, i) => {
+                    const chip = document.createElement('span');
+                    chip.className = 'badge bg-light text-dark border preview-chip d-flex align-items-center gap-2';
+                    chip.append(document.createTextNode(f.name + ' (' + fmtSize(f.size) + ')'));
+                    const x = document.createElement('button');
+                    x.type = 'button'; x.className = 'btn-close btn-close-sm'; x.style.fontSize = '.6rem';
+                    x.addEventListener('click', () => { state.files.splice(i, 1); renderFilePreview(); });
+                    chip.appendChild(x);
+                    els.preview.appendChild(chip);
+                });
+            }
+
+            els.file.addEventListener('change', () => {
+                for (const f of els.file.files) {
+                    if (state.files.length >= MAX_FILES) { showError('At most ' + MAX_FILES + ' attachments are allowed.'); break; }
+                    if (f.size > MAX_FILE_BYTES) { showError(f.name + ' exceeds 5 MB.'); continue; }
+                    state.files.push(f);
+                }
+                els.file.value = '';
+                renderFilePreview();
+            });
+
+            els.send.addEventListener('submit', async (ev) => {
+                ev.preventDefault();
+                const content = els.content.value.trim();
+                if (!content && state.files.length === 0) return;
+                const form = new FormData();
+                form.append('receiverId', state.otherId);
+                form.append('content', content);
+                state.files.forEach(f => form.append('files', f));
+                els.sendBtn.disabled = true;
+                try {
+                    const created = await api('', { method: 'POST', body: form });
+                    els.content.value = '';
+                    state.files = [];
+                    renderFilePreview();
+                    els.placeholder.classList.add('d-none');
+                    appendMessage(created);
+                    els.box.scrollTop = els.box.scrollHeight;
+                    loadConversations();
+                } catch (e) { showError(e.message); }
+                finally { els.sendBtn.disabled = false; }
+            });
+
+            els.content.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); els.send.requestSubmit(); }
+            });
+
+            els.olderBtn.addEventListener('click', loadOlder);
+
+            let searchTimer = null;
+
+            function hideResults() { els.results.classList.add('d-none'); els.results.innerHTML = ''; }
+
+            async function searchUsers(q) {
+                try {
+                    const users = await api('/users?q=' + encodeURIComponent(q));
+                    if (els.search.value.trim() !== q) return; // a newer search is already running
+                    els.results.innerHTML = '';
+                    if (users.length === 0) {
+                        const empty = document.createElement('div');
+                        empty.className = 'list-group-item text-muted small';
+                        empty.textContent = 'No users found.';
+                        els.results.appendChild(empty);
+                    }
+                    users.forEach(u => {
+                        const a = document.createElement('a');
+                        a.href = '#';
+                        a.className = 'list-group-item list-group-item-action';
+                        const name = document.createElement('span');
+                        name.className = 'fw-semibold';
+                        name.textContent = label(u.name, u.alias, u.id);
+                        const id = document.createElement('span');
+                        id.className = 'small text-muted ms-2';
+                        id.textContent = u.id;
+                        a.append(name, id);
+                        a.addEventListener('click', (ev) => {
+                            ev.preventDefault();
+                            hideResults();
+                            els.search.value = '';
+                            openConversation(u.id);
+                        });
+                        els.results.appendChild(a);
+                    });
+                    els.results.classList.remove('d-none');
+                } catch (e) { showError(e.message); }
+            }
+
+            els.search.addEventListener('input', () => {
+                clearTimeout(searchTimer);
+                const q = els.search.value.trim();
+                if (!q) { hideResults(); return; }
+                searchTimer = setTimeout(() => searchUsers(q), 250);
+            });
+
+            document.addEventListener('click', (ev) => {
+                if (ev.target !== els.search && !els.results.contains(ev.target)) hideResults();
+            });
+
+            // ---------- init ----------
+            loadConversations();
+            const preselect = new URLSearchParams(location.search).get('with');
+            if (preselect) openConversation(preselect);
+            setInterval(() => { loadConversations(); refreshThread(); }, 10000);
+        })();
+    </script>
+</div>
+</body>
+</html>

@@ -4,22 +4,19 @@ import lombok.RequiredArgsConstructor;
 import mk.finki.ukim.lost_and_found.model.domain.Message;
 import mk.finki.ukim.lost_and_found.model.domain.MessageAttachment;
 import mk.finki.ukim.lost_and_found.model.domain.User;
-import mk.finki.ukim.lost_and_found.model.dto.ConversationDto;
-import mk.finki.ukim.lost_and_found.model.dto.MessageDto;
 import mk.finki.ukim.lost_and_found.repository.MessageAttachmentRepository;
 import mk.finki.ukim.lost_and_found.repository.MessageRepository;
 import mk.finki.ukim.lost_and_found.service.domain.MessageService;
-import mk.finki.ukim.lost_and_found.service.domain.UserService;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,14 +29,10 @@ public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
     private final MessageAttachmentRepository attachmentRepository;
-    private final UserService userService;
 
     @Override
     @Transactional
-    public MessageDto send(String senderId, String receiverId, String content, List<MultipartFile> files) {
-        User sender = userService.findByUsername(senderId);
-        User receiver = userService.findByUsername(receiverId);
-
+    public Message send(User sender, User receiver, String content, List<byte[]> attachments) {
         if (sender.getId().equals(receiver.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot send a message to yourself");
         }
@@ -48,17 +41,16 @@ public class MessageServiceImpl implements MessageService {
         }
 
         String text = content == null ? "" : content.trim();
-        List<MultipartFile> nonEmptyFiles = files == null ? List.of()
-                : files.stream().filter(f -> f != null && !f.isEmpty()).toList();
+        List<byte[]> files = attachments == null ? List.of() : attachments;
 
-        if (text.isEmpty() && nonEmptyFiles.isEmpty()) {
+        if (text.isEmpty() && files.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message must have content or an attachment");
         }
         if (text.length() > MAX_CONTENT_LENGTH) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Message content must not exceed " + MAX_CONTENT_LENGTH + " characters");
         }
-        if (nonEmptyFiles.size() > MAX_ATTACHMENTS) {
+        if (files.size() > MAX_ATTACHMENTS) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "At most " + MAX_ATTACHMENTS + " attachments are allowed");
         }
@@ -68,16 +60,10 @@ public class MessageServiceImpl implements MessageService {
         message.setReceiver(receiver);
         message.setContent(text);
 
-        for (MultipartFile file : nonEmptyFiles) {
-            if (file.getSize() > MAX_ATTACHMENT_BYTES) {
+        for (byte[] bytes : files) {
+            if (bytes.length > MAX_ATTACHMENT_BYTES) {
                 throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,
                         "Attachment exceeds " + (MAX_ATTACHMENT_BYTES / (1024 * 1024)) + " MB");
-            }
-            byte[] bytes;
-            try {
-                bytes = file.getBytes();
-            } catch (IOException e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read attachment");
             }
             MessageAttachment attachment = new MessageAttachment();
             attachment.setMessage(message);
@@ -86,87 +72,48 @@ public class MessageServiceImpl implements MessageService {
             message.getAttachments().add(attachment);
         }
 
-        return MessageDto.from(messageRepository.save(message));
+        return messageRepository.save(message);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<ConversationDto> getConversations(String userId) {
-        User me = userService.findByUsername(userId);
-
-        // keyed by partner id; the query is already ordered newest first
-        Map<String, ConversationDto> conversations = new LinkedHashMap<>();
-        for (Message m : messageRepository.findLatestMessagePerConversation(me.getId())) {
-            User other = m.getSender().getId().equals(me.getId()) ? m.getReceiver() : m.getSender();
-            conversations.putIfAbsent(other.getId(), new ConversationDto(
-                    other.getId(),
-                    other.getName(),
-                    other.getAlias(),
-                    m.getContent(),
-                    m.getSender().getId(),
-                    m.getDateSent(),
-                    !m.getAttachments().isEmpty()
-            ));
-        }
-        return new ArrayList<>(conversations.values());
+    public Page<Message> findConversation(User user, User other, int pageNum, int pageSize) {
+        int safePage = Math.max(pageNum, 0);
+        int safeSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
+        return messageRepository.findConversation(user.getId(), other.getId(),
+                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "dateSent")));
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<MessageDto> getConversation(String userId, String otherUserId, int page, int size) {
-        User me = userService.findByUsername(userId);
-        User other = userService.findByUsername(otherUserId); // throws if the user doesn't exist
-
-        int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
-
-        List<MessageDto> result = new ArrayList<>(
-                messageRepository.findConversation(me.getId(), other.getId(),
-                                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "dateSent")))
-                        .map(MessageDto::from)
-                        .getContent());
-        Collections.reverse(result); // oldest first for display
-        return result;
+    public List<Message> findLatestMessagePerConversation(User user) {
+        return messageRepository.findLatestMessagePerConversation(user.getId());
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public MessageDto getById(String userId, String messageId) {
-        User me = userService.findByUsername(userId);
-        Message message = messageRepository.findByIdWithUsers(messageId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found"));
-        requireParticipant(message, me);
-        return MessageDto.from(message);
+    public Optional<Message> findById(String id, User user) {
+        return messageRepository.findByIdWithUsers(id).filter(m -> isParticipant(m, user));
+    }
+
+    @Override
+    public Optional<MessageAttachment> findAttachmentById(String attachmentId, User user) {
+        return attachmentRepository.findByIdWithMessage(attachmentId)
+                .filter(a -> isParticipant(a.getMessage(), user));
     }
 
     @Override
     @Transactional
-    public void delete(String userId, String messageId) {
-        User me = userService.findByUsername(userId);
-        Message message = messageRepository.findByIdWithUsers(messageId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found"));
-        if (!message.getSender().getId().equals(me.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the sender can delete a message");
-        }
-        messageRepository.delete(message);
+    public Optional<Message> deleteById(String id, User user) {
+        Optional<Message> message = findById(id, user);
+        message.ifPresent(m -> {
+            if (!m.getSender().getId().equals(user.getId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the sender can delete a message");
+            }
+            messageRepository.delete(m);
+        });
+        return message;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public MessageAttachment getAttachment(String userId, String attachmentId) {
-        User me = userService.findByUsername(userId);
-        MessageAttachment attachment = attachmentRepository.findByIdWithMessage(attachmentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Attachment not found"));
-        requireParticipant(attachment.getMessage(), me);
-        return attachment;
-    }
-
-    private void requireParticipant(Message message, User user) {
-        boolean participant = message.getSender().getId().equals(user.getId())
+    private boolean isParticipant(Message message, User user) {
+        return message.getSender().getId().equals(user.getId())
                 || message.getReceiver().getId().equals(user.getId());
-        if (!participant) {
-            // 404 instead of 403 so message ids can't be probed
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found");
-        }
     }
 }
