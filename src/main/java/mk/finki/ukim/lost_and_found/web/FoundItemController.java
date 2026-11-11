@@ -75,6 +75,7 @@ public class FoundItemController {
 
         model.addAttribute("full", full);
         model.addAttribute("user", user);
+        model.addAttribute("isStudent", userService.isStudent(user));
         model.addAttribute("itemStatus", ItemStatus.values());
 
         return "foundItems/foundItemDetails";

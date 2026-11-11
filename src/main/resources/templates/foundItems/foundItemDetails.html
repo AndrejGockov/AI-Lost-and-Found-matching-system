@@ -4,71 +4,158 @@
       layout:decorate="~{layout}">
 <head>
     <meta charset="UTF-8">
+    <title th:text="${item.title}">Found Item Details</title>
 </head>
 <body>
-<div layout:fragment="content">
-    <p th:if="${error}" th:text="${error}" style="color: red;"></p>
+<div layout:fragment="content" class="container mt-4 mb-5">
+    <!-- Back button -->
+    <div class="mb-3">
+        <a th:href="@{/found-items}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back
+        </a>
+    </div>
 
-    <h1 th:text="${item.title}">Title</h1>
-    <p><strong>Posted by:</strong> <span th:text="${item.posterName}">Poster Name</span></p>
-    <p><strong>Current holder:</strong> <span th:text="${item.holderName}">Holder Name</span></p>
-    <p>Date posted: <span th:text="${#temporals.format(item.datePosted, 'yyyy-MM-dd HH:mm')}"></span></p>
-    <p>Last updated: <span th:text="${#temporals.format(item.lastUpdated, 'yyyy-MM-dd HH:mm')}"></span></p>
-    <p>Status: <span th:text="${item.status.displayName}"></span></p>
+    <!-- Title and status badge -->
+    <div class="d-flex align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-box-open fs-3 me-3 text-primary-custom"></i>
+            <h4 class="mb-0 fw-bold" th:text="${item.title}">Title</h4>
+        </div>
+        <div>
+            <span th:text="${item.status.displayName != null ? item.status.displayName : item.status}"
+                  th:class="'badge-relative ' + (${item.status.name() == 'PERMANENTLY_LOST'} ? 'badge-relative-danger' : (${item.status.name() == 'UNRESOLVED'} ? 'badge-relative-tomorrow' : 'badge-relative-soon'))">
+            </span>
+        </div>
+    </div>
 
-    <div th:if="${full}">
-        <p th:text="${item.description}">Description</p>
-        <p>Date found: <span th:if="${item.dateFound != null}" th:text="${#temporals.format(item.dateFound, 'yyyy-MM-dd HH:mm')}"></span></p>
-        <p>Location: <span th:text="${item.locationFound}"></span></p>
-        <p>Identifiable: <span th:text="${item.identifiable} ? 'Yes' : 'No'"></span></p>
+    <p th:if="${error}" th:text="${error}" class="alert alert-danger"></p>
 
-        <!-- Display Attached Images -->
-        <div th:if="${item.images != null and !item.images.empty}">
-            <h3>Images</h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <div th:each="img : ${item.images}">
-                    <img th:src="@{/found-items/images/{id}(id=${img.id})}"
-                         alt="Found Item Image"
-                         style="max-width: 200px; max-height: 200px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px;">
+    <!-- Main Details Box -->
+    <div class="card shadow-sm mb-4 border" style="transform: none !important; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important; transition: none !important;">
+        <div class="card-body">
+            <!-- Top Metadata -->
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <p class="mb-2"><strong><i class="fas fa-user-check text-primary-custom me-2"></i>Current holder:</strong> <span th:text="${item.holderName}">Holder Name</span></p>
+                    <p class="mb-2"><strong><i class="fas fa-user text-primary-custom me-2"></i>Posted by:</strong> <span th:text="${item.posterName}">Poster Name</span></p>
+                    <p class="mb-2"><strong><i class="fas fa-calendar-alt text-primary-custom me-2"></i>Date posted:</strong> <span th:text="${#temporals.format(item.datePosted, 'dd.MM.yyyy HH:mm')}"></span></p>
+                    <p class="mb-2"><strong><i class="fas fa-clock text-primary-custom me-2"></i>Last updated:</strong> <span th:text="${#temporals.format(item.lastUpdated, 'dd.MM.yyyy HH:mm')}"></span></p>
+                </div>
+            </div>
+
+            <!-- Description, Location, and Date Found section -->
+            <div class="mt-3 pt-3 border-top">
+                <p class="mb-2"><strong>Description:</strong></p>
+                <p class="text-muted" th:text="${item.description}">Description</p>
+
+                <div class="mt-3">
+                    <p class="mb-2" th:if="${item.dateFound != null}">
+                        <strong><i class="fas fa-calendar-check text-primary-custom me-2"></i>Date found:</strong>
+                        <span th:text="${#temporals.format(item.dateFound, 'dd.MM.yyyy HH:mm')}"></span>
+                    </p>
+                    <p class="mb-2" th:if="${item.locationFound != null}">
+                        <strong><i class="fas fa-map-marker-alt text-primary-custom me-2"></i>Location:</strong>
+                        <span th:text="${item.locationFound}"></span>
+                    </p>
+                </div>
+
+                <!-- Display Attached Images -->
+                <div th:if="${item.images != null and !item.images.empty}" class="mt-4">
+                    <h5 class="mb-3"><i class="fas fa-images me-2"></i>Images</h5>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <div th:each="img : ${item.images}">
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal"
+                               th:onclick="'openImageModal(\'' + @{/found-items/images/{id}(id=${img.id})} + '\')'">
+                                <img th:src="@{/found-items/images/{id}(id=${img.id})}"
+                                     alt="Found Item Image"
+                                     class="img-thumbnail"
+                                     style="width: 150px; height: 150px; object-fit: cover; cursor: pointer;">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unified Evenly Spaced Action Buttons -->
+                <div th:if="${item.holderId == user.id}" class="mt-4 pt-3 border-top">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <!-- Edit Button -->
+                        <a th:href="@{/found-items/edit/{id}(id=${item.id})}"
+                           class="btn btn-primary-custom btn-sm"
+                           th:classappend="${item.status.name() != 'UNRESOLVED'} ? 'disabled pe-none opacity-50' : ''">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+
+                        <!-- Delete Button -->
+                        <form method="post" th:action="@{/found-items/delete/{id}(id=${item.id})}"
+                              onsubmit="return confirm('Delete this item?');" style="display:inline; margin:0;">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    th:classappend="${item.status.name() != 'UNRESOLVED'} ? 'disabled pe-none opacity-50' : ''"
+                                    th:attr="disabled=${item.status.name() != 'UNRESOLVED'} ? 'disabled' : null">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                        </form>
+
+                        <!-- Status Action Buttons (Visible only when UNRESOLVED) -->
+                        <block th:if="${item.status.name() == 'UNRESOLVED'}">
+                            <form id="resolvedForm" method="post" th:action="@{/found-items/update-status/{id}(id=${item.id})}" onsubmit="disableButtons()" style="display:inline; margin:0;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <input type="hidden" name="itemStatus" value="RESOLVED"/>
+                                <button type="submit" class="btn btn-success btn-sm" id="resolvedBtn">Mark as resolved</button>
+                            </form>
+
+                            <form id="lostForm" method="post" th:action="@{/found-items/update-status/{id}(id=${item.id})}" onsubmit="disableButtons()" style="display:inline; margin:0;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <input type="hidden" name="itemStatus" value="PERMANENTLY_LOST"/>
+                                <button type="submit" class="btn btn-danger btn-sm" id="lostBtn">Mark as lost</button>
+                            </form>
+                        </block>
+                    </div>
+                </div>
+
+                <!-- Holder history -->
+                <div th:if="${item.transfers != null and !item.transfers.empty}" class="mt-4 pt-3 border-top">
+                    <h5 class="mb-3"><i class="fas fa-history me-2"></i>Holder history</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center" th:each="t : ${item.transfers}">
+                            <span th:text="${t.newHolderName}"></span>
+                            <div>
+                                <span class="badge"
+                                      th:classappend="${t.accepted == null} ? 'bg-warning text-dark' : (${t.accepted == true} ? 'bg-success' : 'bg-danger')"
+                                      th:text="${t.accepted == null ? 'Pending' : (t.accepted == true ? 'Accepted' : 'Declined')}"></span>
+                                <small class="text-muted ms-2" th:text="${#temporals.format(t.dateSent, 'dd.MM.yyyy HH:mm')}"></small>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Holder history -->
-        <div th:if="${item.transfers != null and !item.transfers.empty}">
-            <h3>Holder history</h3>
-            <ul>
-                <li th:each="t : ${item.transfers}">
-                    <span th:text="${t.newHolderName}"></span>
-                    - <span th:if="${t.accepted == null}">Pending</span><span th:if="${t.accepted == true}">Accepted</span><span th:if="${t.accepted == false}">Declined</span>
-                    (<span th:text="${#temporals.format(t.dateSent, 'yyyy-MM-dd HH:mm')}"></span>)
-                </li>
-            </ul>
+    <!-- Image Preview Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-body text-center position-relative p-0">
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3 z-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <img id="modalImage" src="" class="img-fluid rounded shadow-lg" style="max-height: 85vh; object-fit: contain;" alt="Zoomed Image">
+                </div>
+            </div>
         </div>
     </div>
 
-    <div th:unless="${full}">
-        <p><em>Full details are hidden for this item.</em></p>
-    </div>
+    <script>
+        function openImageModal(src) {
+            document.getElementById('modalImage').src = src;
+        }
 
-    <!-- Status update, holder history, Edit/Delete only visible to the current holder -->
-    <div th:if="${item.holderId == user.id}">
-        <form method="post" th:action="@{/found-items/update-status/{id}(id=${item.id})}">
-            <select name="itemStatus">
-                <option th:each="s : ${itemStatus}" th:value="${s}" th:text="${s}"></option>
-            </select>
-            <button type="submit">Change status</button>
-        </form>
-
-        <a th:href="@{/found-items/edit/{id}(id=${item.id})}">Edit</a>
-
-        <form method="post" th:action="@{/found-items/delete/{id}(id=${item.id})}"
-              onsubmit="return confirm('Delete this item?');" style="display:inline;">
-            <button type="submit">Delete</button>
-        </form>
-    </div>
-
-    <p><a th:href="@{/found-items}">Back</a></p>
+        function disableButtons() {
+            var lb = document.getElementById('lostBtn');
+            var rb = document.getElementById('resolvedBtn');
+            if (lb) lb.disabled = true;
+            if (rb) rb.disabled = true;
+        }
+    </script>
 </div>
 </body>
 </html>

@@ -52,6 +52,7 @@ public class LostItemController {
         User user = userService.findByUsername(principal.getName());
         model.addAttribute("item", lostItemApplicationService.findById(id).orElseThrow(() -> new LostItemNotFoundException(id)));
         model.addAttribute("user", user);
+        model.addAttribute("isStudent", userService.isStudent(user));
         model.addAttribute("itemStatus", ItemStatus.values());
         return "lostItems/lostItemDetails";
     }
