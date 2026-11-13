@@ -87,7 +87,8 @@
                     canEdit=${item.type.name() == 'FOUND' ? item.holderId == user.id : item.posterId == user.id},
                     showStatus=${true},
                     posterName=${item.posterName},
-                    holderName=${item.type.name() == 'FOUND' ? item.holderName : null})}"></div>
+                    holderName=${item.type.name() == 'FOUND' ? item.holderName : null},
+                    images=${item.images})}"></div>
         </div>
     </div>
 

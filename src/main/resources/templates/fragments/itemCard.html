@@ -1,4 +1,4 @@
-<div th:fragment="itemCard(item, basePath, description, hasImages, canEdit, showStatus, posterName, holderName)"
+<div th:fragment="itemCard(item, basePath, description, hasImages, canEdit, showStatus, posterName, holderName, images)"
      class="card h-100 shadow-sm">
 
     <div class="card-body d-flex flex-column">
@@ -26,14 +26,48 @@
            th:text="${#strings.length(description) > 100 ? #strings.substring(description, 0, 100) + '...' : description}"
            class="card-text text-break">Description</p>
 
-        <!-- Images indicator & Status badge at the bottom -->
+        <!-- Thumbnails: below the description. Driven by the separate 'images' param (not item.images),
+             so callers whose DTO has no images field (e.g. myReports) can simply omit it without erroring.
+             Always shows the 1st image at big size. The 2nd image (also big) is shown alongside it only
+             from the sm breakpoint up (d-none d-sm-block) - on narrow/mobile screens only 1 image shows.
+             When there are more than 2 images, a "+N" overlay sits on the 2nd image.
+             Images are unselectable/non-draggable so they can't be opened or saved from the card. -->
+        <div th:if="${hasImages != null and hasImages and images != null and !images.empty}"
+             th:with="imgCount=${images.size()}"
+             class="d-flex align-items-start gap-2 mb-2">
+
+            <!-- 1st image: always shown, big size -->
+            <img th:src="@{|${basePath}/images/${images[0].id}|}"
+                 draggable="false" oncontextmenu="return false;"
+                 class="rounded border item-thumb"
+                 style="width:clamp(6rem, 3.2vw + 5rem, 9rem);height:clamp(6rem, 3.2vw + 5rem, 9rem);object-fit:cover;flex:0 0 auto;user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:none;"
+                 alt="Item image">
+
+            <!-- 2nd image: same big size, hidden on narrow/mobile screens; "+N" overlay if more than 2 remain -->
+            <div th:if="${imgCount >= 2}"
+                 class="position-relative d-none d-sm-block"
+                 style="width:clamp(6rem, 3.2vw + 5rem, 9rem);height:clamp(6rem, 3.2vw + 5rem, 9rem);flex:0 0 auto;">
+                <img th:src="@{|${basePath}/images/${images[1].id}|}"
+                     draggable="false" oncontextmenu="return false;"
+                     class="rounded border item-thumb"
+                     style="width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none;pointer-events:none;"
+                     alt="Item image">
+                <div th:if="${imgCount > 2}"
+                     class="position-absolute top-0 start-0 w-100 h-100 rounded d-flex align-items-center justify-content-center fw-semibold text-white"
+                     style="background:rgba(0,0,0,0.55);user-select:none;pointer-events:none;font-size:1rem;">
+                    +<span th:text="${imgCount - 2}"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status badge & fallback images indicator (only shown when thumbnails above couldn't be rendered) -->
         <div class="mt-auto pt-2 d-flex flex-column gap-2">
             <div th:if="${showStatus}" class="small text-muted d-flex align-items-center gap-1">
                 <span>Status:</span>
                 <span th:text="${item.status.displayName}"
                       th:classappend="${item.status.name() == 'PERMANENTLY_LOST'} ? 'badge-relative badge-relative-danger' : (${item.status.name() == 'UNRESOLVED'} ? 'badge-relative badge-relative-tomorrow' : 'badge-relative badge-relative-soon')">Status</span>
             </div>
-            <p th:if="${hasImages != null and hasImages}" class="mb-0 small">
+            <p th:if="${hasImages != null and hasImages and (images == null or images.empty)}" class="mb-0 small">
                 <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Contains images</span>
             </p>
         </div>
