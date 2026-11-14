@@ -128,11 +128,15 @@ public class FoundItemApplicationServiceImpl implements FoundItemApplicationServ
         if (userService.isStudent(user)) {
             return foundItemService
                     .findPage(title, identifiable, pageNum, pageSize)
-                    .map(DisplayFoundItemResponseDto::from);
+                    .map(item -> item.isIdentifiable()
+                            ? DisplayFoundItemResponseDto.from(item)
+                            : DisplayFoundItemResponseDto.fromRestricted(item));
         }
 
         return foundItemService
                 .findPage(title, posterName, status, identifiable, pageNum, pageSize)
-                .map(DisplayFoundItemResponseDto::from);
+                .map(item -> item.isIdentifiable()
+                        ? DisplayFoundItemResponseDto.from(item)
+                        : DisplayFoundItemResponseDto.fromRestricted(item));
     }
 }
