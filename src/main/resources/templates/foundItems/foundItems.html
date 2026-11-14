@@ -86,12 +86,12 @@
               item=${item},
               basePath='/found-items',
               description=${item.description},
-              hasImages=${!item.images.empty},
+              hasImages=${item.identifiable and !item.images.empty},
               canEdit=${item.holderId == user.id},
               showStatus=${!isStudent},
               posterName=${item.posterName},
               holderName=${item.holderName},
-              images=${item.images})}"></div>
+              images=${item.identifiable ? item.images : null})}"></div>
     </div>
   </div>
 

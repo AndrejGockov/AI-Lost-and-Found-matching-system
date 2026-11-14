@@ -54,12 +54,9 @@ public class ItemImageController {
     private boolean canViewFoundImage(FoundItemImage image, User user) {
         FoundItem item = image.getItem();
 
-        // Mirrors FoundItemApplicationServiceImpl#canViewFull:
-        // non-identifiable items are restricted to poster, holder, and non-students.
-        return !item.isIdentifiable()
-                || item.getPoster().getId().equals(user.getId())
-                || item.getHolder().getId().equals(user.getId())
-                || !userService.isStudent(user);
+        // non-identifiable items are restricted to holder
+        return item.isIdentifiable()
+                || item.getHolder().getId().equals(user.getId());
     }
 
     // Shared by both: content type detection + caching
