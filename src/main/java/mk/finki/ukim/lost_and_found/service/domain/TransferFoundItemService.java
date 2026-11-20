@@ -5,8 +5,16 @@ import mk.finki.ukim.lost_and_found.model.domain.TransferFoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TransferFoundItemService {
+
+    List<TransferFoundItem> findHistory(FoundItem foundItem);
+
+    Optional<TransferFoundItem> findPendingTransfer(FoundItem foundItem);
+
+    TransferFoundItem findPendingWithLockById(String transferId);
+
     TransferFoundItem offerTransfer(FoundItem foundItem, User newHolder);
 
     TransferFoundItem retractTransfer(String transferId);
@@ -14,4 +22,6 @@ public interface TransferFoundItemService {
     TransferFoundItem acceptTransfer(String transferId);
 
     TransferFoundItem declineTransfer(String transferId);
+
+    TransferFoundItem respond(String transferId, boolean accept);
 }
