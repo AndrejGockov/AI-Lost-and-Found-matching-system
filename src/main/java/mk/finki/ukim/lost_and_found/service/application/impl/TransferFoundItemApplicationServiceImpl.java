@@ -5,7 +5,7 @@ import mk.finki.ukim.lost_and_found.model.domain.FoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.TransferFoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.dto.DisplayTransferFoundItemResponseDto;
-import mk.finki.ukim.lost_and_found.model.dto.TransferHistoryEntryDto;
+import mk.finki.ukim.lost_and_found.model.dto.DisplayTransferHistoryDto;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.*;
 import mk.finki.ukim.lost_and_found.service.application.TransferFoundItemApplicationService;
@@ -15,8 +15,6 @@ import mk.finki.ukim.lost_and_found.service.domain.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,26 +27,11 @@ public class TransferFoundItemApplicationServiceImpl implements TransferFoundIte
 
     @Override
     @Transactional(readOnly = true)
-    public List<TransferHistoryEntryDto> findHistory(String foundItemId) {
+    public List<DisplayTransferHistoryDto> findHistory(String foundItemId) {
         FoundItem item = foundItemService.findById(foundItemId)
                 .orElseThrow(() -> new FoundItemNotFoundException(foundItemId));
 
-        List<TransferHistoryEntryDto> entries = new ArrayList<>();
-        User from = item.getPoster();
-
-        for (TransferFoundItem t : transferFoundItemService.findHistory(item)) {
-            entries.add(new TransferHistoryEntryDto(
-                    t.getId(),
-                    from.getId(), from.getName(),
-                    t.getNewHolder().getId(), t.getNewHolder().getName(),
-                    t.getDateSent(), t.getDateResponded(), t.getAccepted()));
-
-            if (Boolean.TRUE.equals(t.getAccepted())) {
-                from = t.getNewHolder();
-            }
-        }
-
-        return entries.reversed();
+        return DisplayTransferHistoryDto.from(item.getPoster(), transferFoundItemService.findHistory(item));
     }
 
     @Override
