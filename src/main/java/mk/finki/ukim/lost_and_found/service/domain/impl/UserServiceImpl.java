@@ -1,5 +1,6 @@
 package mk.finki.ukim.lost_and_found.service.domain.impl;
 
+import lombok.AllArgsConstructor;
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.exceptions.InvalidUsernameException;
 import mk.finki.ukim.lost_and_found.repository.UserRepository;
@@ -9,10 +10,9 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class UserServiceImpl implements UserService {
-
     private final UserRepository userRepository;
-    public UserServiceImpl(UserRepository userRepository) {this.userRepository = userRepository;}
 
     @Override
     public User findByUsername(String username) {
