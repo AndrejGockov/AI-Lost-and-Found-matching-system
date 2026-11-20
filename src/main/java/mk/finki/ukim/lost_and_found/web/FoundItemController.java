@@ -12,7 +12,9 @@ import mk.finki.ukim.lost_and_found.model.dto.DisplayFoundItemResponseDto;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.FoundItemNotFoundException;
 import mk.finki.ukim.lost_and_found.model.exceptions.InvalidUsernameException;
+import mk.finki.ukim.lost_and_found.model.exceptions.OnlyHolderCanModifyPostException;
 import mk.finki.ukim.lost_and_found.service.application.FoundItemApplicationService;
+import mk.finki.ukim.lost_and_found.service.application.TransferFoundItemApplicationService;
 import mk.finki.ukim.lost_and_found.service.domain.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
@@ -26,6 +28,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping({"/found-items"})
 public class FoundItemController {
     private final FoundItemApplicationService foundItemApplicationService;
+    private final TransferFoundItemApplicationService transferFoundItemApplicationService;
     private final UserService userService;
 
     @GetMapping
@@ -73,9 +76,15 @@ public class FoundItemController {
                     .orElseThrow(() -> new FoundItemNotFoundException(id)));
         }
 
+        // The item's single open transfer offer, if any, and only if this
+        // user is allowed to see it (the holder who sent it, or the user
+        // it was offered to). Drives the Transfer/Retract/Accept/Reject
+        // buttons on the details page.
+        model.addAttribute("pendingTransfer",
+                transferFoundItemApplicationService.findPendingTransfer(id, user).orElse(null));
+
         model.addAttribute("full", full);
         model.addAttribute("user", user);
-        model.addAttribute("isStudent", userService.isStudent(user));
         model.addAttribute("itemStatus", ItemStatus.values());
 
         return "foundItems/foundItemDetails";
@@ -85,7 +94,16 @@ public class FoundItemController {
     public String getFoundItemTransferHistory(@PathVariable String id,
                                               Principal principal,
                                               Model model) {
-        return "";
+        User user = userService.findByUsername(principal.getName());
+
+        DisplayFoundItemResponseDto item = foundItemApplicationService.findById(id)
+                .orElseThrow(() -> new FoundItemNotFoundException(id));
+
+        model.addAttribute("item", item);
+        model.addAttribute("user", user);
+        model.addAttribute("transfers", transferFoundItemApplicationService.findHistory(id));
+
+        return "foundItems/transferHistory";
     }
 
     @GetMapping("/add")
@@ -182,36 +200,89 @@ public class FoundItemController {
 
     @GetMapping("/{id}/create-transfer-offer")
     public String createTransfer(@PathVariable String id,
+                                 @RequestParam(required = false) String query,
                                  Principal principal,
+                                 RedirectAttributes redirectAttributes,
                                  Model model) {
-        return "";
+        User user = userService.findByUsername(principal.getName());
+
+        DisplayFoundItemResponseDto item = foundItemApplicationService.findById(id)
+                .orElseThrow(() -> new FoundItemNotFoundException(id));
+
+        if (!item.holderId().equals(user.getId())) {
+            redirectAttributes.addFlashAttribute("error", new OnlyHolderCanModifyPostException());
+            return "redirect:/error";
+        }
+
+        model.addAttribute("item", item);
+        model.addAttribute("user", user);
+        model.addAttribute("query", query);
+        if (query != null && !query.isBlank()) {
+            model.addAttribute("results",
+                    userService.searchActive(query, userService.findByUsername(user.getId()), 10));
+        }
+
+        return "foundItems/offerTransferForm";
     }
 
     @PostMapping("/{id}/create-transfer-offer")
     public String addTransfer(@PathVariable String id,
-                                 Principal principal,
-                                 Model model) {
-        return "redirect:/found-items/" + id;
+                              @RequestParam String holderUsername,
+                              Principal principal,
+                              RedirectAttributes redirectAttributes) {
+        User user = userService.findByUsername(principal.getName());
+
+        try {
+            transferFoundItemApplicationService.offerTransfer(id, holderUsername, user);
+            return "redirect:/found-items/" + id;
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/found-items/" + id + "/create-transfer-offer";
+        }
     }
 
     @PostMapping("/{id}/retract-transfer-offer")
     public String retractTransfer(@PathVariable String id,
                                   Principal principal,
-                                  Model model) {
+                                  RedirectAttributes redirectAttributes) {
+        User user = userService.findByUsername(principal.getName());
+
+        try {
+            transferFoundItemApplicationService.retractTransfer(id, user);
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
         return "redirect:/found-items/" + id;
     }
 
     @PostMapping("/{id}/accept-transfer")
     public String acceptTransfer(@PathVariable String id,
                                  Principal principal,
-                                 Model model) {
+                                 RedirectAttributes redirectAttributes) {
+        User user = userService.findByUsername(principal.getName());
+
+        try {
+            transferFoundItemApplicationService.acceptTransfer(id, user);
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
         return "redirect:/found-items/" + id;
     }
 
     @PostMapping("/{id}/reject-transfer")
     public String rejectTransfer(@PathVariable String id,
                                  Principal principal,
-                                 Model model) {
+                                 RedirectAttributes redirectAttributes) {
+        User user = userService.findByUsername(principal.getName());
+
+        try {
+            transferFoundItemApplicationService.rejectTransfer(id, user);
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
         return "redirect:/found-items/" + id;
     }
 }

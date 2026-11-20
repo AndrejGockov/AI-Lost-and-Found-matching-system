@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>Transfer history</title>
+</head>
+<body>
+<div layout:fragment="content" class="container mt-4 mb-5">
+    <div class="mb-3">
+        <a th:href="@{/found-items/{id}(id=${item.id})}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back to item
+        </a>
+    </div>
+
+    <div class="d-flex align-items-center mb-4">
+        <i class="fas fa-history fs-3 me-3 text-primary-custom"></i>
+        <div>
+            <h4 class="mb-0 fw-bold">Transfer history</h4>
+            <div class="text-muted" th:text="${item.title}">Item title</div>
+        </div>
+    </div>
+
+    <!-- No transfers at all -->
+    <p th:if="${transfers == null or transfers.empty}" class="alert alert-light border text-muted">
+        This item has not been transferred.
+    </p>
+
+    <!-- Newest to oldest. The oldest entry's "from" is always the item's
+         original poster; later entries' "from" is resolved server-side as
+         whoever the previous ACCEPTED transfer's new holder was. -->
+    <ul th:unless="${transfers == null or transfers.empty}" class="list-group">
+        <li class="list-group-item" th:each="t : ${transfers}">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <span th:text="${t.fromHolderName}" class="fw-semibold">From</span>
+                    <i class="fas fa-arrow-right mx-2 text-muted"></i>
+                    <span th:text="${t.toHolderName}" class="fw-semibold">To</span>
+                </div>
+                <span class="badge"
+                      th:classappend="${t.accepted == null} ? 'bg-warning text-dark' : (${t.accepted == true} ? 'bg-success' : 'bg-danger')"
+                      th:text="${t.accepted == null ? 'Pending' : (t.accepted == true ? 'Accepted' : 'Declined')}">
+                </span>
+            </div>
+            <div class="small text-muted mt-1">
+                Offered: <span th:text="${#temporals.format(t.dateSent, 'dd.MM.yyyy HH:mm')}"></span>
+                <span th:if="${t.dateResponded != null}">
+                    &middot; Responded: <span th:text="${#temporals.format(t.dateResponded, 'dd.MM.yyyy HH:mm')}"></span>
+                </span>
+            </div>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

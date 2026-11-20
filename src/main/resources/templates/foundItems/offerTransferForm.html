@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>Transfer item</title>
+</head>
+<body>
+<div layout:fragment="content" class="container mt-4 mb-5">
+    <div class="mb-3">
+        <a th:href="@{/found-items/{id}(id=${item.id})}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back to item
+        </a>
+    </div>
+
+    <div class="d-flex align-items-center mb-4">
+        <i class="fas fa-right-left fs-3 me-3 text-primary-custom"></i>
+        <div>
+            <h4 class="mb-0 fw-bold">Transfer item</h4>
+            <div class="text-muted" th:text="${item.title}">Item title</div>
+        </div>
+    </div>
+
+    <p th:if="${error}" th:text="${error}" class="alert alert-danger"></p>
+
+    <div class="card shadow-sm mb-4 border">
+        <div class="card-body">
+            <form method="get" th:action="@{/found-items/{id}/create-transfer-offer(id=${item.id})}"
+                  class="d-flex gap-2">
+                <input type="text" name="query" th:value="${query}" class="form-control"
+                       placeholder="Search for a professor or student by name" autofocus>
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="fas fa-search me-1"></i>Search
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <p th:if="${query != null and !query.isEmpty() and (results == null or results.empty)}" class="text-muted">
+        No matching users found.
+    </p>
+
+    <ul th:if="${results != null and !results.empty}" class="list-group">
+        <li class="list-group-item d-flex justify-content-between align-items-center" th:each="candidate : ${results}">
+            <div>
+                <span th:text="${candidate.name}" class="fw-semibold"></span>
+                <span class="text-muted small ms-2" th:text="${candidate.id}"></span>
+            </div>
+            <form method="post" th:action="@{/found-items/{id}/create-transfer-offer(id=${item.id})}" style="margin:0;">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="holderUsername" th:value="${candidate.id}"/>
+                <button type="submit" class="btn btn-sm btn-primary-custom">
+                    <i class="fas fa-paper-plane me-1"></i>Send offer
+                </button>
+            </form>
+        </li>
+    </ul>
+</div>
+</body>
+</html>
