@@ -6,6 +6,7 @@ import mk.finki.ukim.lost_and_found.model.domain.TransferFoundItem;
 
 public record DisplayTransferFoundItemResponseDto(
         String id,
+        String foundItemId,
         String newHolderId,
         String newHolderName,
         Instant dateSent,
@@ -15,6 +16,7 @@ public record DisplayTransferFoundItemResponseDto(
     public static DisplayTransferFoundItemResponseDto from(TransferFoundItem transfer) {
         return new DisplayTransferFoundItemResponseDto(
                 transfer.getId(),
+                transfer.getFoundItem().getId(),
                 transfer.getNewHolder().getId(),
                 transfer.getNewHolder().getName(),
                 transfer.getDateSent(),

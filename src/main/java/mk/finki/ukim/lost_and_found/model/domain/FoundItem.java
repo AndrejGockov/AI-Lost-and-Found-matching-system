@@ -73,8 +73,9 @@ public class FoundItem {
     @Transient
     private List<String> deleteImageIds = new ArrayList<>();
 
-    // History for who's held the item
+    // History for who's held the item newest to oldest
     @OneToMany(mappedBy = "foundItem", fetch = FetchType.LAZY)
+    @OrderBy("dateSent DESC")
     private List<TransferFoundItem> transfers = new ArrayList<>();
 
     @PrePersist
