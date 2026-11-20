@@ -5,7 +5,7 @@ import mk.finki.ukim.lost_and_found.model.domain.FoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.TransferFoundItem;
 import mk.finki.ukim.lost_and_found.model.domain.User;
 import mk.finki.ukim.lost_and_found.model.dto.DisplayTransferFoundItemResponseDto;
-import mk.finki.ukim.lost_and_found.model.dto.DisplayTransferHistoryDto;
+import mk.finki.ukim.lost_and_found.model.dto.DisplayTransferHistoryResponseDto;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.*;
 import mk.finki.ukim.lost_and_found.service.application.TransferFoundItemApplicationService;
@@ -27,11 +27,11 @@ public class TransferFoundItemApplicationServiceImpl implements TransferFoundIte
 
     @Override
     @Transactional(readOnly = true)
-    public List<DisplayTransferHistoryDto> findHistory(String foundItemId) {
+    public List<DisplayTransferHistoryResponseDto> findHistory(String foundItemId) {
         FoundItem item = foundItemService.findById(foundItemId)
                 .orElseThrow(() -> new FoundItemNotFoundException(foundItemId));
 
-        return DisplayTransferHistoryDto.from(item.getPoster(), transferFoundItemService.findHistory(item));
+        return DisplayTransferHistoryResponseDto.from(item.getPoster(), transferFoundItemService.findHistory(item));
     }
 
     @Override
