@@ -40,7 +40,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public List<Notification> markAllAsRead(User user) {
-        List<Notification> unread = notificationRepository.findAllByUserAndViewedFalse(user);
+        List<Notification> unread = notificationRepository.findAllByUserAndIsViewedFalse(user);
         unread.forEach(n -> n.setViewed(true));
         return notificationRepository.saveAll(unread);
     }
