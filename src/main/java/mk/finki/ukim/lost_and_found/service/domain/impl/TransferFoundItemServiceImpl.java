@@ -8,6 +8,7 @@ import mk.finki.ukim.lost_and_found.model.exceptions.TransferAlreadyPendingExcep
 import mk.finki.ukim.lost_and_found.model.exceptions.TransferAlreadyProcessedException;
 import mk.finki.ukim.lost_and_found.model.exceptions.TransferNotFoundException;
 import mk.finki.ukim.lost_and_found.repository.TransferFoundItemRepository;
+import mk.finki.ukim.lost_and_found.service.domain.NotificationService;
 import mk.finki.ukim.lost_and_found.service.domain.TransferFoundItemService;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +19,8 @@ import java.util.Optional;
 @Service
 @AllArgsConstructor
 public class TransferFoundItemServiceImpl implements TransferFoundItemService {
-
     private final TransferFoundItemRepository transferFoundItemRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<TransferFoundItem> findHistory(FoundItem foundItem) {
@@ -54,7 +55,12 @@ public class TransferFoundItemServiceImpl implements TransferFoundItemService {
         transfer.setFoundItem(foundItem);
         transfer.setNewHolder(newHolder);
 
-        return transferFoundItemRepository.save(transfer);
+        transferFoundItemRepository.save(transfer);
+
+        // Notify new holder of offer
+        notificationService.receivedTransferOfferNotification(newHolder, transfer);
+
+        return transfer;
     }
 
     @Override
@@ -77,15 +83,21 @@ public class TransferFoundItemServiceImpl implements TransferFoundItemService {
     @Override
     public TransferFoundItem respond(String transferId, boolean accept) {
         TransferFoundItem transfer = findPendingWithLockById(transferId);
+        FoundItem item = transfer.getFoundItem();
+        User originalHolder = item.getHolder();
 
         transfer.setAccepted(accept);
         transfer.setDateResponded(Instant.now());
 
         if (accept) {
-            FoundItem item = transfer.getFoundItem();
             item.setHolder(transfer.getNewHolder());
         }
 
-        return transferFoundItemRepository.save(transfer);
+        transfer = transferFoundItemRepository.save(transfer);
+
+        // Notify old holder
+        notificationService.transferOfferAnswerNotification(originalHolder, transfer, accept);
+
+        return transfer;
     }
 }

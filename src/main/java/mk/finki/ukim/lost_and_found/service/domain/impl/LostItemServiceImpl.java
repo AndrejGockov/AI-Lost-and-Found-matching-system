@@ -8,6 +8,7 @@ import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.LostItemNotFoundException;
 import mk.finki.ukim.lost_and_found.repository.LostItemRepository;
 import mk.finki.ukim.lost_and_found.service.domain.LostItemService;
+import mk.finki.ukim.lost_and_found.service.domain.NotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -24,6 +25,7 @@ import static mk.finki.ukim.lost_and_found.service.specifications.FieldFilterSpe
 @AllArgsConstructor
 public class LostItemServiceImpl implements LostItemService {
     private final LostItemRepository lostItemRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<LostItem> findAll(ItemStatus status) {
@@ -83,7 +85,11 @@ public class LostItemServiceImpl implements LostItemService {
         LostItem existing = lostItemRepository.findById(id)
                 .orElseThrow(() -> new LostItemNotFoundException(id));
         existing.setStatus(itemStatus);
-        return lostItemRepository.save(existing);
+        lostItemRepository.save(existing);
+
+        // Notify user of status update
+        notificationService.updatedLostItemStatusNotification(existing.getPoster(), existing);
+        return existing;
     }
 
     @Override
