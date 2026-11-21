@@ -12,4 +12,7 @@ import java.util.List;
 public interface NotificationRepository extends JpaSpecificationRepository<Notification, String> {
     @EntityGraph(attributePaths = "user")
     List<Notification> findAllByUserOrderByDateCreatedDesc(User user);
+
+    @EntityGraph(attributePaths = "user")
+    List<Notification> findAllByUserAndViewedFalse(User user);
 }
