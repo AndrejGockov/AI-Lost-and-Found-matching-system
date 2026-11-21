@@ -22,3 +22,6 @@ CREATE TABLE lost_found_notification
     date_created TIMESTAMPTZ  NOT NULL DEFAULT now(),
     is_viewed    BOOLEAN      NOT NULL DEFAULT FALSE
 );
+
+ALTER TABLE lost_found_notification
+    ADD COLUMN IF NOT EXISTS link TEXT;
