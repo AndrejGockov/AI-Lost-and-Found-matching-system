@@ -12,7 +12,6 @@ import mk.finki.ukim.lost_and_found.model.dto.DisplayFoundItemResponseDto;
 import mk.finki.ukim.lost_and_found.model.enums.ItemStatus;
 import mk.finki.ukim.lost_and_found.model.exceptions.FoundItemNotFoundException;
 import mk.finki.ukim.lost_and_found.model.exceptions.InvalidUsernameException;
-import mk.finki.ukim.lost_and_found.model.exceptions.OnlyHolderCanModifyPostException;
 import mk.finki.ukim.lost_and_found.service.application.FoundItemApplicationService;
 import mk.finki.ukim.lost_and_found.service.application.TransferFoundItemApplicationService;
 import mk.finki.ukim.lost_and_found.service.domain.UserService;
@@ -56,6 +55,7 @@ public class FoundItemController {
 
     @GetMapping("/{id}")
     public String findById(@PathVariable String id,
+                           @RequestParam(required = false) String query,
                            Principal principal,
                            Model model) {
         User user = userService.findByUsername(principal.getName());
@@ -63,11 +63,9 @@ public class FoundItemController {
         DisplayFoundItemResponseDto fullItem = foundItemApplicationService.findById(id)
                 .orElseThrow(() -> new FoundItemNotFoundException(id));
 
-        // The current holder always sees full detail. Otherwise: identifiable
-        // = true shows full detail to anyone; identifiable = false and not
-        // the holder shows the restricted view.
-        boolean full = fullItem.holderId().equals(user.getId())
-                || fullItem.identifiable();
+        // The current holder always sees the full post.
+        boolean isHolder = fullItem.holderId().equals(user.getId());
+        boolean full = isHolder || fullItem.identifiable();
 
         if (full) {
             model.addAttribute("item", fullItem);
@@ -76,12 +74,17 @@ public class FoundItemController {
                     .orElseThrow(() -> new FoundItemNotFoundException(id)));
         }
 
-        // The item's single open transfer offer, if any, and only if this
-        // user is allowed to see it (the holder who sent it, or the user
-        // it was offered to). Drives the Transfer/Retract/Accept/Reject
-        // buttons on the details page.
+        // Displays b
         model.addAttribute("pendingTransfer",
                 transferFoundItemApplicationService.findPendingTransfer(id, user).orElse(null));
+
+        // Only visible to the current holder
+        // query - username searched when transferring item
+        // results - gets users with similar usernames
+        if (isHolder && query != null && !query.isBlank()) {
+            model.addAttribute("query", query);
+            model.addAttribute("results", userService.searchActive(query, user, 10));
+        }
 
         model.addAttribute("full", full);
         model.addAttribute("user", user);
@@ -198,33 +201,6 @@ public class FoundItemController {
         return "redirect:/found-items";
     }
 
-    @GetMapping("/{id}/create-transfer-offer")
-    public String createTransfer(@PathVariable String id,
-                                 @RequestParam(required = false) String query,
-                                 Principal principal,
-                                 RedirectAttributes redirectAttributes,
-                                 Model model) {
-        User user = userService.findByUsername(principal.getName());
-
-        DisplayFoundItemResponseDto item = foundItemApplicationService.findById(id)
-                .orElseThrow(() -> new FoundItemNotFoundException(id));
-
-        if (!item.holderId().equals(user.getId())) {
-            redirectAttributes.addFlashAttribute("error", new OnlyHolderCanModifyPostException());
-            return "redirect:/error";
-        }
-
-        model.addAttribute("item", item);
-        model.addAttribute("user", user);
-        model.addAttribute("query", query);
-        if (query != null && !query.isBlank()) {
-            model.addAttribute("results",
-                    userService.searchActive(query, userService.findByUsername(user.getId()), 10));
-        }
-
-        return "foundItems/offerTransferForm";
-    }
-
     @PostMapping("/{id}/create-transfer-offer")
     public String addTransfer(@PathVariable String id,
                               @RequestParam String holderUsername,
@@ -234,11 +210,11 @@ public class FoundItemController {
 
         try {
             transferFoundItemApplicationService.offerTransfer(id, holderUsername, user);
-            return "redirect:/found-items/" + id;
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/found-items/" + id + "/create-transfer-offer";
         }
+
+        return "redirect:/found-items/" + id;
     }
 
     @PostMapping("/{id}/retract-transfer-offer")
