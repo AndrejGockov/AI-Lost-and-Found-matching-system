@@ -31,7 +31,7 @@ public class Notification {
     private Instant dateCreated;
 
     @Column(name = "is_viewed", nullable = false)
-    private boolean isViewed = false;
+    private boolean viewed = false;
 
     @Column(name = "link")
     private String link;

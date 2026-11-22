@@ -14,5 +14,5 @@ public interface NotificationRepository extends JpaSpecificationRepository<Notif
     List<Notification> findAllByUserOrderByDateCreatedDesc(User user);
 
     @EntityGraph(attributePaths = "user")
-    List<Notification> findAllByUserAndIsViewedFalse(User user);
+    List<Notification> findAllByUserAndViewedFalse(User user);
 }

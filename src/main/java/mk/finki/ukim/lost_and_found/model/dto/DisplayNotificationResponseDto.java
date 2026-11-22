@@ -1,7 +1,6 @@
 package mk.finki.ukim.lost_and_found.model.dto;
 
 import mk.finki.ukim.lost_and_found.model.domain.Notification;
-import mk.finki.ukim.lost_and_found.model.domain.User;
 
 import java.time.Instant;
 import java.util.List;
@@ -11,7 +10,7 @@ public record DisplayNotificationResponseDto(
         String userId,
         String message,
         Instant dateCreated,
-        boolean isViewed,
+        boolean viewed,
         String link
 ) {
     public static DisplayNotificationResponseDto from(Notification notification) {
