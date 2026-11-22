@@ -8,6 +8,8 @@ import java.util.List;
 public interface NotificationApplicationService {
     List<DisplayNotificationResponseDto> findAllByUser(User user);
 
+    DisplayNotificationResponseDto findById(String id, User user);
+
     DisplayNotificationResponseDto markAsRead(String id, User user);
 
     List<DisplayNotificationResponseDto> markAllAsRead(User user);

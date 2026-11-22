@@ -26,6 +26,15 @@ public class NotificationApplicationServiceImpl implements NotificationApplicati
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public DisplayNotificationResponseDto findById(String id, User user) {
+        Notification notification = notificationService.findById(id)
+                .orElseThrow(() -> new NotificationNotFoundException(id));
+
+        return DisplayNotificationResponseDto.from(notification);
+    }
+
+    @Override
     @Transactional
     public DisplayNotificationResponseDto markAsRead(String id, User user) {
         Notification notification = notificationService.findById(id)

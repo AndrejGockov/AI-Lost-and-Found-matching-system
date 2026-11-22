@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>Notifications</title>
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+<div layout:fragment="content" class="container mt-4 mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-bell fs-3 me-3 text-dark"></i>
+            <h4 class="mb-0 fw-bold">Notifications</h4>
+        </div>
+        <button th:if="${!notifications.empty}" type="button" id="markAllReadBtn"
+                class="btn btn-outline-secondary btn-sm"
+                th:attr="data-url=@{/notifications/mark-all-read}">
+            <i class="fas fa-check-double me-1"></i>Mark all as read
+        </button>
+    </div>
+
+    <p th:if="${notifications.empty}" class="text-muted">You have no notifications.</p>
+
+    <div th:unless="${notifications.empty}" class="row g-0 border shadow-sm bg-white">
+        <!-- Left: notification list -->
+        <div class="col-12 col-md-4 border-end p-0" id="notificationList" style="max-height: 650px; overflow-y: auto;">
+            <div th:each="n : ${notifications}"
+                 class="notification-item px-3 py-2 border-bottom bg-white"
+                 role="button" tabindex="0"
+                 th:classappend="${!n.viewed} ? 'fw-semibold text-dark' : 'text-muted'"
+                 th:attr="data-get-url=@{/notifications/{id}(id=${n.id})},
+                          data-mark-url=@{/notifications/{id}/mark-read(id=${n.id})},
+                          data-read=${n.viewed}">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="fas fa-bell mt-1"></i>
+                    <div class="flex-grow-1">
+                        <div class="text-truncate" th:text="${n.message}" style="max-width: 240px;"></div>
+                        <small class="notification-date text-muted" th:text="${#temporals.format(n.dateCreated, 'dd.MM.yyyy HH:mm')}"></small>
+                    </div>
+                </div>
+                <button th:if="${!n.viewed}" type="button"
+                        class="btn btn-sm btn-outline-primary mark-read-btn mt-2">
+                    <i class="fas fa-check me-1"></i>Mark as read
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: selected notification. Starts empty; filled in by JS. -->
+        <div class="col-12 col-md-8 p-4" id="notificationDetail">
+            <p class="text-muted mb-0">Select a notification to view its details.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('[notifications] script loaded');
+
+            var csrfMeta = document.querySelector('meta[name="_csrf"]');
+            var csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+            var csrfToken = csrfMeta ? csrfMeta.content : null;
+            var csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.content : null;
+
+            var items = document.querySelectorAll('.notification-item');
+            var markAllBtn = document.getElementById('markAllReadBtn');
+            var selectedItem = null;
+
+            console.log('[notifications] found', items.length, 'notification items; markAllBtn present:', !!markAllBtn);
+
+            function request(url, method) {
+                console.log('[notifications]', method, url);
+                var headers = {};
+                if (csrfToken && csrfHeader) {
+                    headers[csrfHeader] = csrfToken;
+                }
+                return fetch(url, { method: method, headers: headers })
+                    .then(function (res) {
+                        console.log('[notifications] response status', res.status, 'for', url);
+                        if (!res.ok) {
+                            throw new Error('Request to ' + url + ' failed with status ' + res.status);
+                        }
+                        return res.json();
+                    });
+            }
+
+            function showError(message) {
+                var detail = document.getElementById('notificationDetail');
+                detail.innerHTML = '';
+                var p = document.createElement('p');
+                p.className = 'text-danger mb-0';
+                p.textContent = message;
+                detail.appendChild(p);
+            }
+
+            function renderDetail(dto, sourceItem) {
+                var detail = document.getElementById('notificationDetail');
+                detail.innerHTML = '';
+
+                var title = document.createElement('h5');
+                title.className = 'mb-1';
+                title.textContent = dto.message;
+
+                var date = document.createElement('small');
+                date.className = 'text-muted d-block mb-3';
+                date.textContent = new Date(dto.dateCreated).toLocaleString();
+
+                var body = document.createElement('p');
+                body.className = 'mb-4';
+                body.textContent = dto.message;
+
+                detail.appendChild(title);
+                detail.appendChild(date);
+                detail.appendChild(body);
+
+                if (dto.link) {
+                    var linkWrap = document.createElement('div');
+                    linkWrap.className = 'pt-3 border-top mb-2';
+
+                    var link = document.createElement('a');
+                    link.className = 'btn btn-primary-custom btn-sm';
+                    link.href = '/' + dto.link;
+                    link.innerHTML = '<i class="fas fa-arrow-right me-1"></i>Go to post';
+
+                    linkWrap.appendChild(link);
+                    detail.appendChild(linkWrap);
+                }
+
+                if (!dto.viewed) {
+                    var markWrap = document.createElement('div');
+                    markWrap.className = dto.link ? '' : 'pt-3 border-top';
+
+                    var markBtn = document.createElement('button');
+                    markBtn.type = 'button';
+                    markBtn.className = 'btn btn-sm btn-outline-primary';
+                    markBtn.innerHTML = '<i class="fas fa-check me-1"></i>Mark as read';
+                    markBtn.addEventListener('click', function () {
+                        markAsRead(sourceItem);
+                    });
+
+                    markWrap.appendChild(markBtn);
+                    detail.appendChild(markWrap);
+                }
+            }
+
+            // Non-selected ("resting") styling, driven entirely by the
+            // item's current read state. This is the single place that
+            // decides what an unselected item should look like.
+            function applyRestingStyle(item) {
+                item.classList.remove('bg-primary-custom', 'text-white', 'fw-semibold', 'text-dark', 'text-muted');
+                if (item.dataset.read === 'true') {
+                    item.classList.add('text-muted');
+                } else {
+                    item.classList.add('fw-semibold', 'text-dark');
+                }
+
+                var dateEl = item.querySelector('.notification-date');
+                if (dateEl) {
+                    dateEl.classList.remove('text-white');
+                    dateEl.classList.add('text-muted');
+                }
+            }
+
+            // Selected styling is always the same regardless of read state.
+            function applySelectedStyle(item) {
+                item.classList.remove('fw-semibold', 'text-dark', 'text-muted');
+                item.classList.add('bg-primary-custom', 'text-white');
+
+                var dateEl = item.querySelector('.notification-date');
+                if (dateEl) {
+                    dateEl.classList.remove('text-muted');
+                    dateEl.classList.add('text-white');
+                }
+            }
+
+            function selectItem(item) {
+                items.forEach(function (b) {
+                    if (b === item) {
+                        applySelectedStyle(b);
+                    } else {
+                        applyRestingStyle(b);
+                    }
+                });
+                selectedItem = item;
+            }
+
+            function markAsRead(item) {
+                request(item.dataset.markUrl, 'POST')
+                    .then(function (dto) {
+                        item.dataset.read = 'true';
+
+                        if (item === selectedItem) {
+                            applySelectedStyle(item);
+                        } else {
+                            applyRestingStyle(item);
+                        }
+
+                        var btn = item.querySelector('.mark-read-btn');
+                        if (btn) {
+                            btn.remove();
+                        }
+
+                        if (item === selectedItem) {
+                            renderDetail(dto, item);
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error('[notifications] mark-read failed', err);
+                        showError('Could not mark this notification as read. Please try again.');
+                    });
+            }
+
+            items.forEach(function (item) {
+                item.addEventListener('click', function (event) {
+                    if (event.target.closest('.mark-read-btn')) {
+                        return;
+                    }
+
+                    console.log('[notifications] clicked item', item.dataset.getUrl);
+                    request(item.dataset.getUrl, 'GET')
+                        .then(function (dto) {
+                            selectItem(item);
+                            renderDetail(dto, item);
+                        })
+                        .catch(function (err) {
+                            console.error('[notifications] fetch failed', err);
+                            showError('Could not open this notification. Please try again.');
+                        });
+                });
+
+                var markBtn = item.querySelector('.mark-read-btn');
+                if (markBtn) {
+                    markBtn.addEventListener('click', function (event) {
+                        event.stopPropagation();
+                        markAsRead(item);
+                    });
+                }
+            });
+
+            if (markAllBtn) {
+                markAllBtn.addEventListener('click', function () {
+                    console.log('[notifications] clicked mark-all');
+                    request(markAllBtn.dataset.url, 'POST')
+                        .then(function () {
+                            items.forEach(function (item) {
+                                item.dataset.read = 'true';
+                                if (item === selectedItem) {
+                                    applySelectedStyle(item);
+                                } else {
+                                    applyRestingStyle(item);
+                                }
+                                var btn = item.querySelector('.mark-read-btn');
+                                if (btn) {
+                                    btn.remove();
+                                }
+                            });
+
+                            if (selectedItem) {
+                                var detailMarkBtn = document.querySelector('#notificationDetail button.btn-outline-primary');
+                                if (detailMarkBtn) {
+                                    detailMarkBtn.parentElement.remove();
+                                }
+                            }
+                        })
+                        .catch(function (err) {
+                            console.error('[notifications] mark-all-read failed', err);
+                            showError('Could not mark all notifications as read. Please try again.');
+                        });
+                });
+            }
+        });
+    </script>
+</div>
+</body>
+</html>
